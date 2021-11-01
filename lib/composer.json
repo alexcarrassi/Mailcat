@@ -1,0 +1,6 @@
+{
+    "require": {
+        "qferr/mjml-php": "^1.1",
+        "scotteh/php-dom-wrapper": "^2.0"
+    }
+}
