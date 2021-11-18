@@ -552,7 +552,6 @@ var Ark_Mail_CPT_JS = function() {
 
             /** Setting up the top commands bar **/
             document.querySelectorAll(".commands_bar .editing_tools button").forEach(function(button) {
-                console.log(button);
                 if(button.dataset.stateful !== undefined) {
                     button.addEventListener("click", function(e) {
                         // document.querySelector(".commands_bar #preview").classList.toggle("")
@@ -644,17 +643,12 @@ var Ark_Mail_CPT_JS = function() {
             default_blocks.forEach(function(block) {
 
                 let block_category = block.get('category');
-                console.log('default block');
-                console.log(block);
-                console.log(block_category);
-                console.log(block.attributes.attributes.title);
 
                 jQuery(block_category.view.$el).addClass("special_category");
                 jQuery(block_category.view.$el).find('.gjs-title').html(ark_mail_cpt_config.editor.special_category);
 
                 /** Get the actual HTML of the block in the Blocks div**/
                 let block_class = block.attributes.attributes.class.split(' ')[0];
-                console.log(block_class);
                 jQuery("." + block_class).detach().appendTo(jQuery(block_category.view.$el).find(".default_block_container"))
 
                 /** Clicking on the default block should not open the category container **/
@@ -705,7 +699,6 @@ var Ark_Mail_CPT_JS = function() {
             /** Rerender the toolbar according to our will **/
             self.editor.on('canvas:tools:update', function(update) {
                 if(update.type === "global") {
-                    console.log(update);
                     /** Update the position of the toolbar: our changes cause it to be misaligned **/
                     if(self.create_tb_l() || self.create_tb_t() || self.create_tb_r()) {
                         self.editor.Commands.get('select-comp').updateGlobalPos();
@@ -713,7 +706,6 @@ var Ark_Mail_CPT_JS = function() {
 
                     self.reposition_tb_l_x();
                     self.reposition_tb_y();
-                    console.log(parseInt(self.editor.Canvas.getToolbarEl().style.top));
                     /** Do some last minute updates **/
 
                     /** If there is a href trait, add the components hrefbar **/
@@ -861,7 +853,6 @@ var Ark_Mail_CPT_JS = function() {
             self.reposition_tb_y = function() {
                 /** tb_l and tb_r are always the same height **/
                 let toolbar_top = parseInt(self.editor.Canvas.getToolbarEl().style.top);
-                console.log(toolbar_top);
                 let l_y = toolbar_top < 0 ? "88px" : -toolbar_top + "px";
 
                 self.editor.Canvas.getToolbarEl().querySelector(".custom_tb_l").style.top = l_y;
@@ -922,7 +913,6 @@ var Ark_Mail_CPT_JS = function() {
                     self.editor.DomComponents.addType(component_type.id, {
                         model: {
                             initToolbar() {
-                                console.log(this.attributes.tagName);
                                 typemodel.prototype.initToolbar.apply(this, arguments);
 
                                 this.bg_toolbar();
@@ -954,7 +944,6 @@ var Ark_Mail_CPT_JS = function() {
                                     let border_value = this.attributes.style['border']
                                     let width, width_unit,style,color;
                                     if(border_value !== undefined) {
-                                        console.log("not undefined")
                                         let values = border_value.split(" ");
                                         width = parseInt(values[0]); width_unit = values[0].replace(width, "");
                                         style = values[1]; color = values[2];
@@ -1067,7 +1056,6 @@ var Ark_Mail_CPT_JS = function() {
                                     this.toolbar_add_colorpicker(this.attributes.style['container-background-color'], 'container-background-color', 'cbgcolor', "Container color", items_container)
                                 }
                                 if(stylable.includes('background-url')) {
-                                    console.log(this.attributes.style);
 
                                     this.toolbar_add_imageuploader(this.attributes.style['background-url'], 'bg-url', 'background-url', 'Image', items_container );
                                 }
@@ -1434,15 +1422,16 @@ var Ark_Mail_CPT_JS = function() {
                                         attributes: {class : 'tb_l tb-loop_config', style:'background-color:transparent; transition: transform 0.1s;'},
                                         command: function(loop) {
                                             // console.log(test);
-                                            editor.trigger('loop_tb_click', loop);
+                                            self.editor.trigger('loop_tb_click', loop);
                                         },
                                         // command: ed => ed.runCommand('render_colorpicker', { caller: label }),
                                         label: label,
                                     });
                                     this.set('toolbar', tb);
+                                    var that = this;
                                     label.querySelector(".head").addEventListener("click", this.loop_toggle_toolbar_menu);
                                     label.querySelector(".body").addEventListener("click", function(e) {
-                                        this.loop_handle_toolbar_body_click(e);
+                                        that.loop_handle_toolbar_body_click(e);
                                     });
                                 }
 
@@ -1518,7 +1507,7 @@ var Ark_Mail_CPT_JS = function() {
                                     width = parseInt(getComputedStyle(loop_tb_label).width);
                                     horizontalOffset = -500 - width;
 
-                                    loop_tb_label.parentElement.style.transform = 'translate('+ horizontalOffset + 'px, 10px)';
+                                    // loop_tb_label.parentElement.style.transform = 'translate('+ horizontalOffset + 'px, 10px)';
                                 }
                             },
                             /**
@@ -1898,7 +1887,6 @@ var Ark_Mail_CPT_JS = function() {
     // }
 
     self.get_dataset_by_hierarchy = function(datalink, data_ref){
-        console.log(data_ref);
         if(data_ref.length === 0) {
             return datalink;
         }

@@ -16,7 +16,6 @@ class Ark_DataLink {
         foreach($data as $key => $value) {
             $this->$key = $value;
         }
-
     }
 
     public function &get_child($id) {
