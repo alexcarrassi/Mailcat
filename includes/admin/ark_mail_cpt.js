@@ -130,11 +130,11 @@ var Ark_Mail_CPT_JS = function() {
             // Size of the editor
             width: 'auto',
             height: '1200px',
-            // Disable the storage manager for the moment
             storageManager: {
                 type: 'remote',
                 autoload: false,
-                stepsBeforeSave: 10,
+                autosave: true,
+                stepsBeforeSave: 1,
                 urlStore: ark_mail_cpt_config.ajax_url,
                 // For custom parameters/headers on requests
                 // params: { action: 'save_mail_template' },
@@ -254,6 +254,9 @@ var Ark_Mail_CPT_JS = function() {
             }
         });
 
+
+
+
         // Do something on response
         self.editor.on('asset:upload:response', (response) => {
             self.editor.AssetManager.add([
@@ -268,25 +271,32 @@ var Ark_Mail_CPT_JS = function() {
 
 
 
+        var timerId;
+
+        /** Overriding (debouncing) the .store method**/
         self.editor.StorageManager.add('remote', {
             store(data, clb, clbErr) {
 
-                console.log("custom remote store");
+                clearTimeout(timerId);
 
-                data['action'] = 'save_mail_template';
-                data['mail_id'] = ark_mail_cpt_config.mail_id;
+                timerId = setTimeout(function() {
+                    data['action'] = 'save_mail_template';
+                    data['mail_id'] = ark_mail_cpt_config.mail_id;
 
-                jQuery.ajax({
-                    url: ark_mail_cpt_config.ajax_url,
-                    type: 'POST',
-                    method: 'POST',
-                    cache: false,
-                    data: data,
-                    success : function(response) {
+                    console.log("saving!")
+                    jQuery.ajax({
+                        url: ark_mail_cpt_config.ajax_url,
+                        type: 'POST',
+                        method: 'POST',
+                        cache: false,
+                        data: data,
+                        success : function(response) {
 
-                        console.log(response);
-                    }
-                });
+                            console.log(response);
+                        }
+                    });
+                }, 2000);
+
 
                 // eg. some error on remote side, store it locally
                 // remote.store(data, clb, clbError);
@@ -1287,15 +1297,15 @@ var Ark_Mail_CPT_JS = function() {
                                             if(tinycolor !== null) {
                                                 color = tinycolor.toHexString();
                                                 const _opacity = Math.round(Math.min(Math.max(tinycolor._a || 1, 0), 1) * 255);
-                                                console.log(_opacity);
-                                                console.log( _opacity.toString(16).toUpperCase());
+                                                // console.log(_opacity);
+                                                // console.log( _opacity.toString(16).toUpperCase());
                                                 color =  color + _opacity.toString(16).toUpperCase();
                                             }
                                             else {
                                                 color = null;
                                             }
 
-                                            console.log(color);
+                                            // console.log(color);
 
 
                                             self.editor.runCommand('colorpicker_move', {color: color, attribute: attribute})
@@ -1643,12 +1653,10 @@ var Ark_Mail_CPT_JS = function() {
                         else {
                             style = "1px " + options.caller.value + " black";
                         }
-
                     }
                     else {
                         style = options.caller.value;
                     }
-
 
                     let style_obj = {};
                     style_obj[options.attribute] = style;
