@@ -13,7 +13,7 @@
 .mail_composer_navbar .nav-item {
     padding: 11px;
     cursor: pointer;
-    transition: 0.5s;
+    transition: 0.2s;
     font-size: 1.2em;
 }
 
@@ -860,5 +860,58 @@ li.cat_li{
 .cke_balloon_content #applied_variable div {
     font-weight:bold;
 }
+.nav-item.errors_unresolved {
+    background-color: #ff00004d;
+    animation: pulsate 2s infinite;
+}
 
+@keyframes pulsate {
+    0% {
+        background-color: rgb(255, 255, 255);
 
+    }
+    70% {
+        background-color: rgb(255, 75, 75);
+    }
+    100% {
+        background-color: rgb(255, 255, 255);
+    }
+}
+
+.errorlog_main {
+    padding:10px;
+}
+
+.errorlog_errors_header {
+    font-weight: bold;
+    height: 30px;
+    background-color: lightgrey;
+    padding: 0px 10px;
+    display: flex;
+    align-items: center;
+}
+
+.errorlog_errors_expl{
+    background-color: lightgrey;
+    padding: 0px 10px 5px 10px;
+    display: flex;
+    align-items: center;
+}
+
+.single_error_report {
+    padding: 10px;
+}
+
+.errorlog_row {
+    display:flex;
+    margin: 5px 0px;
+}
+
+.errorlog_report_label {
+    flex:1;
+    font-weight:bold;
+}
+
+.errorlog_report_result{
+    flex:5;
+}

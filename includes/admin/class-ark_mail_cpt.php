@@ -3,26 +3,31 @@
 class Ark_Mail_CPT {
     public $mail_id = null;
     private $datalinks = null;
+    private $errors = null;
 
     public function __construct() {
 
         if(is_admin()) {
+
             add_action('init', array($this, 'register_Ark_Mail_CPT'));
             add_action('init', array($this, 'includes'));
 
             if (isset($_REQUEST['mail_id'])) {
                 $this->mail_id = $_REQUEST['mail_id'];
+
+
             }
             else if(isset($_GET['post'])) {
                 $this->mail_id = $_GET['post'];
             }
 
             if($this->mail_id != null) {
+                $logged_errors = get_option('mailcat_errors');
+                $this->errors = $logged_errors[$this->mail_id] ?? null;
 
                 add_action('add_meta_boxes', array($this, 'add_DataLink_metabox'));
                 add_action('add_meta_boxes', array($this, 'add_direct_mail_metabox'));
                 add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
-
                 add_filter('get_grapes_blocks', array($this, 'default_grapes_blocks'));
             }
         }

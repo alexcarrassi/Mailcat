@@ -46,6 +46,9 @@ error_reporting(E_ALL);
 
 define("ARK_MAIL_COMPOSER_ROOT_DIR", __DIR__);
 define("ARK_MAIL_COMPOSER_ROOT_URI", plugin_dir_url(__FILE__));
+define("MAILCAT_CPT_TYPE", "mailcat_mail");
+
+
 
 register_activation_hook(__FILE__, array('Ark_Mail_Composer_Extension', 'activate'));
 register_deactivation_hook(__FILE__, array('Ark_Mail_Composer_Extension', 'deactivate'));
@@ -55,6 +58,10 @@ class Ark_Mail_Composer_Extension {
         add_action('init', array($this, 'init'));
 
         include_once(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/class-ark_mail_cpt.php");
+
+        if(is_admin()) {
+            include_once(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/admin_notices.php");
+        }
 
     }
 

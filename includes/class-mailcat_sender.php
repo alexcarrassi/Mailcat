@@ -73,11 +73,13 @@ class MailCat_Sender {
             throw new Exception("missing id", 0);
         }
 
-        if($this->root_ids[$key] == null || $this->root_ids[$key] == 0 || $this->root_ids[$key] == "") {
+        $intval = intval($this->root_ids[$key]);
+        if($intval == 0 ) {
             throw new Exception("invalid id", 1);
         }
+
         else {
-            return $this->root_ids[$key];
+            return $intval;
         }
     }
 
@@ -90,28 +92,30 @@ class MailCat_Sender {
      *          Errors that occur during the rendering of the HTML of a mail template
      */
     public function send_mail() {
-        $errors = array(
-
-        );
+        $errors = array();
+        $valid_ids = array();
 
         foreach($this->datalinks->links as $link_id => $datalink) {
             try {
                 $root_id = $this->getRootId($link_id);
                 $datalink->db_id = $root_id;
                 $datalink->populate_data($root_id, $link_id);
+
+
+                $valid_ids[$link_id] = $root_id;
             }
             catch(Exception $e) {
                 $errorcode = $e->getCode();
                 if($errorcode == 0) {
                     /** ID was missing */
                     !isset($errors['missing_ids']) ? $errors['missing_ids'] = array() : "";
-                    array_push($errors['missing_ids'], array($link_id));
+                    array_push($errors['missing_ids'], $link_id);
                 }
 
                 elseif($errorcode == 1) {
                     /** ID was invalid **/
                     !isset($errors['invalid_ids']) ? $errors['invalid_ids'] = array() : "";
-                    array_push($errors['invalid_ids'], array($link_id));
+                    array_push($errors['invalid_ids'], array($link_id => $this->getRootIds()[$link_id]));
                 }
 
                 else {
@@ -123,10 +127,10 @@ class MailCat_Sender {
         }
 
         if(!empty($errors)) {
-//        if(empty($errors)) {
-
+            $errors['valid_ids'] = $valid_ids;
+            $errors['recipient'] = $this->getToAddress();
             /** Abort, log errors **/
-            $this->log_error($errors, 'mailcat_id_errors');
+            $this->log_error($errors, 'id');
             return;
         }
 
@@ -145,10 +149,13 @@ class MailCat_Sender {
 
             $handle = fopen(ARK_MAIL_COMPOSER_ROOT_DIR . '/testhtml.html','w+');
             fwrite($handle,$html); fclose($handle);
+
+//            throw new Exception("test!");
         }
 
         catch(Exception $e) {
-            $this->log_error(array('msg' => $e->getMessage() ), 'mailcat_render_errors');
+            $this->log_error(array('msg' => $e->getMessage() ), 'render');
+            return;
         }
 
 
@@ -278,13 +285,16 @@ class MailCat_Sender {
         $error['origin'] = debug_backtrace()[3]['function'];
         $error['date_and_time'] = date("D M Y H:m");
 
-        $logged_errors = get_option($error_kind);
+        $logged_errors = get_option("mailcat_errors");
 
         //Create the error array for this Mail Id, if it does not exist yet
         !isset($logged_errors[$this->mail_id]) ? $logged_errors[$this->mail_id] = array() : "";
 
-        array_push($logged_errors[$this->mail_id], $error);
+        //Create the error kind array for this error array, if it does not exist yet
+        !isset($logged_errors[$this->mail_id][$error_kind]) ? $logged_errors[$this->mail_id][$error_kind] = array() : "";
 
-        update_option($error_kind, $logged_errors);
+        array_push($logged_errors[$this->mail_id][$error_kind], $error);
+
+        update_option("mailcat_errors", $logged_errors);
     }
 }

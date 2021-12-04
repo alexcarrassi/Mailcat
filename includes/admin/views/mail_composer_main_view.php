@@ -26,12 +26,17 @@
         <div class="nav-item" data-target="tab_scheduling">
             Scheduling
         </div>
+
+        <div class="nav-item <?php echo $this->errors != null ? "errors_unresolved" : ""; ?>" data-target="tab_errorlog">
+            Error log
+        </div>
     </div>
 
     <div class="mail_composer_body">
         <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_datalinks.php"); ?>
         <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_contentcreation.php"); ?>
         <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_scheduling.php"); ?>
+        <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_errorlog.php"); ?>
 
 
     </div>
