@@ -101,7 +101,6 @@ class MailCat_Sender {
                 $datalink->db_id = $root_id;
                 $datalink->populate_data($root_id, $link_id);
 
-
                 $valid_ids[$link_id] = $root_id;
             }
             catch(Exception $e) {
@@ -115,7 +114,7 @@ class MailCat_Sender {
                 elseif($errorcode == 1) {
                     /** ID was invalid **/
                     !isset($errors['invalid_ids']) ? $errors['invalid_ids'] = array() : "";
-                    array_push($errors['invalid_ids'], array($link_id => $this->getRootIds()[$link_id]));
+                    $errors['invalid_ids'][$link_id] = $this->getRootIds()[$link_id];
                 }
 
                 else {
@@ -128,7 +127,6 @@ class MailCat_Sender {
 
         if(!empty($errors)) {
             $errors['valid_ids'] = $valid_ids;
-            $errors['recipient'] = $this->getToAddress();
             /** Abort, log errors **/
             $this->log_error($errors, 'id');
             return;
@@ -150,7 +148,7 @@ class MailCat_Sender {
             $handle = fopen(ARK_MAIL_COMPOSER_ROOT_DIR . '/testhtml.html','w+');
             fwrite($handle,$html); fclose($handle);
 
-//            throw new Exception("test!");
+            throw new Exception("test!");
         }
 
         catch(Exception $e) {
@@ -280,11 +278,7 @@ class MailCat_Sender {
 
 
     /** Log errors to the database, so we can provide the user with opportunities to rectify any errors **/
-    private function log_error($error, $error_kind) {
-
-        $error['origin'] = debug_backtrace()[3]['function'];
-        $error['date_and_time'] = date("D M Y H:m");
-
+    private function log_error($error_data, $error_kind) {
         $logged_errors = get_option("mailcat_errors");
 
         //Create the error array for this Mail Id, if it does not exist yet
@@ -293,8 +287,94 @@ class MailCat_Sender {
         //Create the error kind array for this error array, if it does not exist yet
         !isset($logged_errors[$this->mail_id][$error_kind]) ? $logged_errors[$this->mail_id][$error_kind] = array() : "";
 
-        array_push($logged_errors[$this->mail_id][$error_kind], $error);
 
+        $new_error = array();
+        $new_error['data'] = $error_data;
+
+                    /** Assembling context on the origin of the error **/
+        $backtrace = debug_backtrace()[2];
+        $origin = array();
+        $origin['function'] = $backtrace['function'];
+        $origin['line'] = $backtrace['line'];
+        if(isset($backtrace['class'])) {
+            $origin['class'] = $backtrace['class'];
+        }
+        $file = explode('\\', debug_backtrace()[1]['file']);
+        $origin['file'] = $file[count($file) - 1];
+
+        $new_error['origin'] = $origin;
+
+
+
+        /** Check if the error has already occurred:
+         *
+         * Things that must be the same:
+         *      function name
+         *      class (if exists)
+         *      missing_ids (if exists)
+         *      invalid_ids (if exists)
+         *      valid_ids   (if exists)
+         *
+         *      These must be in their own array, so we can basically say:
+         *          error == error
+         *
+         *      Then, all we need is a separate array for the recipients.
+         *      And, if the error is the same, we just add the to_address to the recipient list.
+         *
+         *
+         *      if we want to add dates and times, we can add one more key value, last_datetime_occured.
+         *      This is merely just an update with now()
+         *
+         **/
+
+
+    /**
+     * array(
+     *  'data' => array (
+     *      'missing_ids' => array(),
+     *      'invalid_ids' => array(),
+     *      'valid_ids'   => array()
+     *  ),
+     *  'origin' => array(
+     *      'function' => 'name',
+     *      'class'    =>   'name'
+     *      'file'    =>    'name',
+     *      'line'    =>    1222
+     *  ),
+     *  'last_occured => "datetime",
+     *  'recipients' => array(
+     *      '1@gmail.com',
+     *      '2@gmail.com'
+     *  )
+     *
+     * )
+     *
+     *
+     */
+
+        foreach($logged_errors[$this->mail_id][$error_kind] as $index => $error) {
+
+            if($new_error['data'] == $error_data) {
+                /** We have a match for the error data. Is the origin the same? */
+                if($new_error['origin'] == $origin) {
+                    /** The origin is the same. So really, this isn't something new, we just need to update the recipient list, and last_occured **/
+                    array_push($error['recipient_list'], $this->getToAddress());
+                    $error['last_occured'] = date("D M Y H:m");
+
+                    $logged_errors[$this->mail_id][$error_kind][$index] = $error;
+                    update_option("mailcat_errors", $logged_errors);
+
+                    return;
+                }
+            }
+        }
+
+        /** If we made it here, then this is a completely new error **/
+
+
+        $new_error['last_occured'] = date("D M Y H:m");
+        $new_error['recipient_list'] = [$this->getToAddress()];
+        array_push($logged_errors[$this->mail_id][$error_kind], $new_error);
         update_option("mailcat_errors", $logged_errors);
     }
 }

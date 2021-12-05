@@ -160,9 +160,9 @@ class Mail_CPT_AJAX {
             $root_id = $datalink->get_example_id();
             $root_ids[$link_id] = $root_id;
         }
-//        $root_ids[array_key_last($root_ids)]= "";
+        $root_ids[array_key_last($root_ids)]= "";
 
-        $sender->setToAddress("aazoutewelle@gmail.com");
+        $sender->setToAddress($_REQUEST['recipient']);
         $sender->setRootIds($root_ids);
         $sender->send_mail();
     }

@@ -60,6 +60,8 @@ var Ark_Mail_CPT_JS = function() {
         self.initialize_editor();
 
         document.querySelector("#btn_direct_mail").addEventListener("click", self.direct_mail);
+
+        self.initialize_errorlog_tab();
     }
 
     self.direct_mail = function() {
@@ -2028,6 +2030,25 @@ var Ark_Mail_CPT_JS = function() {
     }
 
 
+                                                                /** Errorlog tab **/
+    self.initialize_errorlog_tab = function() {
+        var errorlog_tab = document.querySelector("#tab_errorlog");
+        var errorlog_nav = document.querySelector("#nav-item_errorlog");
+
+        var id_errors_el = document.querySelector("#errorlog_id_errors");
+        var render_errors_el = document.querySelector("#errorlog_render_errors");
+
+    }
+
+
+
+                                                                /** END Errorlog tab **/
+
+
+
+
+
+
 
     /** Selector used in the Add Datalink Dialog
      *
@@ -2781,8 +2802,6 @@ var Ark_Mail_CPT_JS = function() {
 
         return applied_variable_li;
     }
-
-
 
 }
 

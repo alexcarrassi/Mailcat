@@ -60,6 +60,8 @@ class Ark_Mail_Composer_Extension {
         include_once(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/class-ark_mail_cpt.php");
 
         if(is_admin()) {
+            include_once(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/mailcat_admin_utils.php");
+
             include_once(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/admin_notices.php");
         }
 

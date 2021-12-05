@@ -15,6 +15,7 @@
     cursor: pointer;
     transition: 0.2s;
     font-size: 1.2em;
+    position:relative;
 }
 
 .mail_composer_navbar .nav-item:not(:first-of-type) {
@@ -860,23 +861,6 @@ li.cat_li{
 .cke_balloon_content #applied_variable div {
     font-weight:bold;
 }
-.nav-item.errors_unresolved {
-    background-color: #ff00004d;
-    animation: pulsate 2s infinite;
-}
-
-@keyframes pulsate {
-    0% {
-        background-color: rgb(255, 255, 255);
-
-    }
-    70% {
-        background-color: rgb(255, 75, 75);
-    }
-    100% {
-        background-color: rgb(255, 255, 255);
-    }
-}
 
 .errorlog_main {
     padding:10px;
@@ -899,12 +883,55 @@ li.cat_li{
 }
 
 .single_error_report {
-    padding: 10px;
+    padding: 10px 0px 0px 0px;
+    display:none;
+}
+
+.single_error_report.active_errorlog {
+    display:block;
+}
+
+#tab_errorlog button {
+    border: none;
+    background-color: transparent;
+}
+#tab_errorlog button:hover {
+    cursor: pointer;
+}
+
+#tab_errorlog button.btn_errorlog_pag_active {
+    background-color: #2271b140;
+    border: 1px solid #2271b1!important;
+}
+
+.paginator {
+    background-color: lightgrey;
+    padding: 10px 10px;
+}
+
+.paginator button {
+    border-radius:5px;
+    border: 1px solid transparent !important;
+    transition: border 0.5s;
+    width: 30px;
+    height: 30px;
+}
+
+.paginator button:hover {
+    border: 1px solid  #2271b1 !important;
+}
+
+.errorlog_errors_container {
+    border-left: 1px solid lightgrey;
+    border-right: 1px solid lightgrey;
 }
 
 .errorlog_row {
     display:flex;
-    margin: 5px 0px;
+    padding: 5px 10px;
+    border-bottom: 1px solid lightgrey;
+    align-items: flex-end;
+
 }
 
 .errorlog_report_label {
@@ -913,5 +940,91 @@ li.cat_li{
 }
 
 .errorlog_report_result{
-    flex:5;
+    flex: 3;
+}
+
+.rectification_recipient_list {
+    max-height: 25vh;
+    overflow: scroll;
+}
+
+
+.rectification_form {
+    padding-bottom: 10px;
+    background-color: #eaeaea;
+}
+
+.rectification_form header {
+    padding: 1px 10px 15px 10px;
+}
+
+
+.rectification_form_fields {
+    padding: 10px 0px 10px 0px;
+    display: flex;
+    flex-direction: row;
+}
+
+.rectification_form_fields_header {
+    padding: 0px 10px;
+}
+
+.rectification_form_id_fields {
+    flex: 4;
+}
+
+.rectification_form_mailing_list {
+    flex: 6;
+}
+
+.rectification_form_mailing_list .errorlog_row {
+    border: 0;
+}
+
+
+.rectification_form_fields_header_title {
+    font-weight:bold;
+}
+.rectification_form_fields label{
+    font-weight: bold;
+}
+
+.rectification_form_button {
+    margin: 5px 10px;
+}
+
+#tab_errorlog button.btn_send_rectification {
+    background-color: #2271b1;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+
+#tab_errorlog button.btn_send_rectification:hover {
+    background-color: #265e89;
+}
+
+.errorlog_field {
+    width:100%;
+    border-bottom: 1px solid lightgrey;
+}
+
+#badge_error_count {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -8px;
+    right: -5px;
+    background-color: red;
+    border: 1px solid white;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    width: 25px;
+    height: 25px;
+    font-weight: bold;
+    font-size: 0.7rem;
 }

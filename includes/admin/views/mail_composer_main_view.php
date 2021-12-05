@@ -15,20 +15,30 @@
 
 <div id="mail_composer_main">
     <div class="mail_composer_navbar nav-bar">
-        <div class="nav-item nav-item_active" data-target="tab_datalinks">
+        <div id="nav-item_datalinks" class="nav-item nav-item_active" data-target="tab_datalinks">
             Datalinks
         </div>
 
-        <div class="nav-item" data-target="tab_contentcreation">
+        <div id="nav-item_contentcreation" class="nav-item" data-target="tab_contentcreation">
             Content creation
         </div>
 
-        <div class="nav-item" data-target="tab_scheduling">
+        <div id="nav-item_scheduling" class="nav-item" data-target="tab_scheduling">
             Scheduling
         </div>
 
-        <div class="nav-item <?php echo $this->errors != null ? "errors_unresolved" : ""; ?>" data-target="tab_errorlog">
+        <div id="nav-item_errorlog" class="nav-item" data-target="tab_errorlog">
             Error log
+            <?php if($this->errors != null) :
+                $total_count = 0;
+                $total_count += isset($this->errors['id']) ? count($this->errors['id']) : 0;
+                $total_count += isset($this->errors['render']) ? count($this->errirs['render']) : 0;
+                ?>
+
+                <div id="badge_error_count">
+                    <?php echo $total_count < 100 ? $total_count : "99+"; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
