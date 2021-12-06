@@ -77,9 +77,12 @@ var Ark_Mail_CPT_JS = function() {
             cache: false,
             data: data,
             success : function(response) {
-                /** Rerender the select element **/
-                console.log(response);
-                alert("send mail done");
+                if(response['success']) {
+                    alert("done")
+                }
+                else {
+                    console.log(response);
+                }
             }
         });
     }
@@ -2038,8 +2041,94 @@ var Ark_Mail_CPT_JS = function() {
         var id_errors_el = document.querySelector("#errorlog_id_errors");
         var render_errors_el = document.querySelector("#errorlog_render_errors");
 
+
+        id_errors_el.addEventListener("click", function(e) {
+           if(e.target.classList.contains("btn_send_rectification")) {
+
+               self.submit_id_rectification_form(
+                   self.gather_id_rectification_form(e.target.closest(".rectification_form"))
+               )
+           }
+        });
+
+        id_errors_el.addEventListener("input", function(e){
+           if(e.target.classList.contains("formfield_invalid")) {
+               e.target.classList.remove("formfield_invalid");
+           }
+           if(e.target.classList.contains("checkbox_check_all")) {
+               /** Check all checkboxes**/
+               e.target.closest(".rectification_form_mailing_list").querySelectorAll(".rectification_recipient_list input").forEach(function(checkbox) {
+                  checkbox.checked = e.target.checked;
+               });
+           }
+        });
     }
 
+    /** Gathers the data for the ID Rectification form, and submits it it **/
+    self.gather_id_rectification_form = function(form) {
+        let valid = true;
+        let formData = {};
+
+        /** First, the id values **/
+        let ids = {};
+        form.querySelectorAll(".rectification_form_id_fields input").forEach(function(input){
+            if(!input.checkValidity()) {
+                input.classList.add("formfield_invalid");
+                alert("Invalid ID for " + input.name);
+                valid = false;
+                return;
+            }
+            ids[input.name] = input.value
+        })
+
+        if(!valid) {  return; }
+
+        /** Next, the recipients **/
+        let recipients = [];
+        form.querySelectorAll(".rectification_form_mailing_list input").forEach(function(input, index) {
+            if(index !== 0 && input.checked) {
+                recipients.push(input.value);
+            }
+        });
+
+        if(recipients.length === 0) {
+            alert("No recipients selected");
+            valid = false;
+        }
+
+        if(!valid) { return; }
+
+        formData['ids'] = ids;
+        formData['recipients'] = recipients;
+        formData['error_index'] = parseInt(document.querySelector(".btn_id_errorlog_pag_active").innerHTML) - 1;
+        formData['error_kind'] = 'id';
+
+
+        return formData;
+    }
+
+    self.submit_id_rectification_form = function(formdata) {
+        formdata['action'] = 'mailcat_rectify_id_error';
+        formdata['mail_id'] = ark_mail_cpt_config.mail_id;
+
+
+        jQuery.ajax({
+            url: ark_mail_cpt_config.ajax_url,
+            type: 'POST',
+            method: 'POST',
+            cache: false,
+            data: formdata,
+            success : function(response) {
+                if(response['success']) {
+                    alert("done")
+                }
+                else {
+                    alert(response['data']['msg']);
+                    console.log(response);
+                }
+            }
+        });
+    }
 
 
                                                                 /** END Errorlog tab **/

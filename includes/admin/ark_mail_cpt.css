@@ -899,7 +899,7 @@ li.cat_li{
     cursor: pointer;
 }
 
-#tab_errorlog button.btn_errorlog_pag_active {
+#tab_errorlog button.btn_id_errorlog_pag_active {
     background-color: #2271b140;
     border: 1px solid #2271b1!important;
 }
@@ -945,7 +945,7 @@ li.cat_li{
 
 .rectification_recipient_list {
     max-height: 25vh;
-    overflow: scroll;
+    overflow-y: scroll;
 }
 
 
@@ -1027,4 +1027,9 @@ li.cat_li{
     height: 25px;
     font-weight: bold;
     font-size: 0.7rem;
+}
+
+
+.formfield_invalid {
+    border: 1px solid red !important;
 }

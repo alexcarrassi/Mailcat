@@ -14,6 +14,24 @@ class MailCat_Sender {
     private $root_ids;
     private $renderer;
     private $mail_id;
+    private $errors;
+    private $is_rectifier = false;
+    private $error_to_rectify;
+
+
+    public function getErrorToRectify() {
+        return $this->error_to_rectify;
+    }
+
+    public function setErrorToRectify($error_to_rectify): void {
+        $this->error_to_rectify = $error_to_rectify;
+    }
+
+
+
+    public function getErrors() {
+        return $this->errors;
+    }
 
 
     public function __construct($mail_id, $to_address = null, $root_ids = null) {
@@ -83,6 +101,15 @@ class MailCat_Sender {
         }
     }
 
+    public function getIsRectifier()
+    {
+        return $this->is_rectifier;
+    }
+
+    public function setIsRectifier($is_rectifier): void
+    {
+        $this->is_rectifier = $is_rectifier;
+    }
     /**
      *
      * We differentiate between 2 different kinds of errors:
@@ -90,7 +117,11 @@ class MailCat_Sender {
      *          Errors that occur when accessing data through a given ID. Missing/Invalid/Misc.
      * 2. Render errors:
      *          Errors that occur during the rendering of the HTML of a mail template
+     *
+     *
+     *
      */
+
     public function send_mail() {
         $errors = array();
         $valid_ids = array();
@@ -127,9 +158,13 @@ class MailCat_Sender {
 
         if(!empty($errors)) {
             $errors['valid_ids'] = $valid_ids;
-            /** Abort, log errors **/
-            $this->log_error($errors, 'id');
-            return;
+            $this->errors = $errors;
+
+            if(!$this->is_rectifier) {
+                /** Only if this isn't a rectification mail do we log the error **/
+                $this->log_error($errors, 'id');
+            }
+            return false;
         }
 
 
@@ -148,34 +183,74 @@ class MailCat_Sender {
             $handle = fopen(ARK_MAIL_COMPOSER_ROOT_DIR . '/testhtml.html','w+');
             fwrite($handle,$html); fclose($handle);
 
-            throw new Exception("test!");
+//            throw new Exception("test!");
         }
 
         catch(Exception $e) {
-            $this->log_error(array('msg' => $e->getMessage() ), 'render');
-            return;
+            $this->errors = $e;
+            if(!$this->is_rectifier) {
+                /** Only if this isn't a rectification mail do we log the error **/
+                $this->log_error(array('msg' => $e->getMessage() ), 'render');
+            }
+            return false;
         }
 
 
-//    $html = stripcslashes($_REQUEST['html']);
 //    $recipient = $_REQUEST['recipient'];
 //    $subject = 'SUBJECT';
 //    $headers = array("Content-Type: text/html; charset=UTF-8 \r\n");
 //    $success = wp_mail( $recipient, $subject, $html, $headers );
-
         $success = true;
-        if($success) {
-            wp_send_json_success(array(
-                'msg' => 'success'
-            ));
+
+        if($this->is_rectifier) {
+            $this->rectify();
         }
-        else {
-            wp_send_json_error(array(
-                'msg' => 'error'
-            ));
-        }
+
+
+
+        return $success;
     }
 
+
+    /**
+     * This function gets called when the user has succesfully sent rectification mails.
+     *
+     * We now remove the error from the error log like so:
+     *    We remove all recipients that have gotten a rectification mail.
+     *    If there are no recipients left, then we simply remove the entire error.
+     *    If there are still recipients left, the error still applies.
+     *
+     **/
+    private function rectify() {
+        $test = 1;
+        $err = $this->getErrorToRectify();
+        $logged_errors = get_option("mailcat_errors");
+
+        $logged_error = $logged_errors[$this->getMailId()][$err['error_kind']][$err['error_index']];
+        $logged_error['recipient_list'] = array_diff($logged_error['recipient_list'], $this->getToAddress());
+        if(count($logged_error['recipient_list']) == 0) {
+            /** No recipients left. Remove from the error log **/
+            unset($logged_errors[$this->getMailId()][$err['error_kind']][$err['error_index']]);
+
+
+            /** Null if empty array is left **/
+            if(count($logged_errors[$this->getMailId()][$err['error_kind']]) == 0) {
+                unset($logged_errors[$this->getMailId()][$err['error_kind']]);
+            }
+        }
+        else {
+            $logged_errors[$this->getMailId()][$err['error_kind']][$err['error_index']]['recipient_list'] = $logged_error['recipient_list'];
+        }
+
+        update_option('mailcat_errors', $logged_errors);
+
+
+
+
+
+        $test = 1;
+
+    }
 
     private function resolve_html($node) {
 

@@ -162,6 +162,7 @@ class Ark_DataLink {
         apply_filters("mc-get_data-$child_name$parent_name", $this, $id_to_use);
         apply_filters("mc-get_data-$child_type$parent_type", $this, $id_to_use);
 
+
         if($this->many) {
             /** This is a datalink flagged as Many. Meaning that we need to create Duplicate siblings for each retrieved dataset**/
             $i = 0;
@@ -499,7 +500,7 @@ class DataLink_Utils {
 
                         $variable_sets['term_data'] = array(
                             'display_name' => 'Term Data',
-                            'vars' => get_object_vars(get_term($object_id))
+                            'vars' => DataLink_Utils::get_object_vars(get_object_vars(get_term($object_id)))
                         );
                         break;
 
@@ -613,6 +614,16 @@ class DataLink_Utils {
 
         );
     }
+
+    /**
+     * For some reason, catching errors from a filter doesn't work without explicitly throwing an error
+     */
+    public static function get_object_vars($object) {
+        if($object == null) {
+            throw new Exception("Nothing found for ID", 1);
+        }
+        return get_object_vars($object);
+    }
 }
 
 
@@ -652,7 +663,8 @@ class Basic_DataFetcher {
                 'data' => array()
             );
         }
-        $post_data = get_object_vars(get_post($datalink_node->db_id));
+
+        $post_data =  DataLink_Utils::get_object_vars(get_post($datalink_node->db_id));
         $datalink_node->data['post_data']['data'] = array_merge($datalink_node->data['post_data']['data'], $post_data);
 
         if(!isset($datalink_node->data['post_meta'])) {
@@ -678,7 +690,8 @@ class Basic_DataFetcher {
                 'data' => array()
             );
         }
-        $comment_data = get_object_vars(get_comment($datalink_node->db_id));
+
+        $comment_data =  DataLink_Utils::get_object_vars(get_comment($datalink_node->db_id));
         $datalink_node->data['comment_data']['data'] = array_merge($datalink_node->data['comment_data']['data'], $comment_data);
 
 
@@ -699,7 +712,8 @@ class Basic_DataFetcher {
                 'data' => array()
             );
         }
-        $comment_data = get_object_vars(get_userdata($datalink_node->db_id));
+
+        $comment_data =  DataLink_Utils::get_object_vars(get_userdata($datalink_node->db_id));
         $datalink_node->data['user_data']['data'] = array_merge($datalink_node->data['user_data']['data'], $comment_data);
 
 
@@ -720,8 +734,10 @@ class Basic_DataFetcher {
                 'data' => array()
             );
         }
-        $comment_data = get_object_vars(get_term($datalink_node->db_id));
-        $datalink_node->data['term_data']['data'] = array_merge($datalink_node->data['term_data']['data'], $comment_data);
+
+
+        $term_data =  DataLink_Utils::get_object_vars(get_term($datalink_node->db_id));
+        $datalink_node->data['term_data']['data'] = array_merge($datalink_node->data['term_data']['data'], $term_data);
 
 
         if(!isset($datalink_node->data['term_meta'])) {
@@ -731,8 +747,8 @@ class Basic_DataFetcher {
             );
         }
 
-        $comment_meta = array_map(function($item) {return array_values($item)[0]; }, get_term_meta($datalink_node->db_id));
-        $datalink_node->data['term_meta']['data'] = array_merge($datalink_node->data['term_meta']['data'], $comment_meta);
+        $term_meta = array_map(function($item) {return array_values($item)[0]; }, get_term_meta($datalink_node->db_id));
+        $datalink_node->data['term_meta']['data'] = array_merge($datalink_node->data['term_meta']['data'], $term_meta);
     }
 
 

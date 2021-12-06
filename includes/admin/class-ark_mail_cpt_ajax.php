@@ -31,8 +31,13 @@ class Mail_CPT_AJAX {
         add_action("wp_ajax_nopriv_get_example_variable_set", array($this,"get_variable_set"));
 
 
-        add_action("wp_ajax_get_loop_iterations", array($this,"get_loop_iterations"));
-        add_action("wp_ajax_nopriv_get_loop_iterations", array($this,"get_loop_iterations"));
+        add_action("wp_ajax_mailcat_rectify_id_error", array($this,"mailcat_rectify_id_error"));
+        add_action("wp_ajax_nopriv_mailcat_rectify_id_error", array($this,"mailcat_rectify_id_error"));
+
+
+
+
+
 
         if(isset($_REQUEST['mail_id'])) {
             $this->mail_id = $_REQUEST['mail_id'];
@@ -164,7 +169,64 @@ class Mail_CPT_AJAX {
 
         $sender->setToAddress($_REQUEST['recipient']);
         $sender->setRootIds($root_ids);
-        $sender->send_mail();
+        if($sender->send_mail()) {
+            wp_send_json_success(array(
+                'msg' => 'success'
+            ));
+
+        }
+        else {
+            wp_send_json_error(array(
+                'msg' => 'error'
+            ));
+        }
+    }
+
+
+    /** User wants to rectify ID errors by manually sending some emails **/
+    function mailcat_rectify_id_error() {
+        $test = 1;
+
+        require_once ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/class-mailcat_sender.php";
+        $sender = new MailCat_Sender($_REQUEST['mail_id']);
+
+        $sender->setToAddress($_REQUEST['recipients']);
+        $sender->setRootIds($_REQUEST['ids']);
+        $sender->setIsRectifier(true);
+        $sender->setErrorToRectify(array(
+            'error_kind' => $_REQUEST['error_kind'],
+            'error_index' => $_REQUEST['error_index'],
+        ));
+
+
+        if($sender->send_mail()) {
+            wp_send_json_success(array(
+                'msg' => 'Rectification succeeded. The mail has been sent to the recipient(s)'
+            ));
+        }
+        else {
+            $errors = $sender->getErrors();
+            $message = "There were errors in your mail: \n\n";
+            foreach($errors as $kind => $error) {
+                switch($kind) {
+                    case "invalid_ids":
+                        $message .= "Invalid ids: \n";
+                        foreach($error as $key => $invalid_id) {
+                            $message .= "$key - $invalid_id";
+                        }
+                        break;
+                }
+            }
+
+
+            $message .= "\n\nDon't worry, we did not send the mail.";
+
+            wp_send_json_error(array(
+
+                'msg' => $message
+            ));
+        }
+
     }
 
 }
