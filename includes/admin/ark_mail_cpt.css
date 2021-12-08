@@ -899,7 +899,7 @@ li.cat_li{
     cursor: pointer;
 }
 
-#tab_errorlog button.btn_id_errorlog_pag_active {
+#tab_errorlog button.btn_errorlog_pag_active {
     background-color: #2271b140;
     border: 1px solid #2271b1!important;
 }
@@ -1018,7 +1018,6 @@ li.cat_li{
     position: absolute;
     top: -8px;
     right: -5px;
-    background-color: red;
     border: 1px solid white;
     color: white;
     border-radius: 50%;
@@ -1027,6 +1026,14 @@ li.cat_li{
     height: 25px;
     font-weight: bold;
     font-size: 0.7rem;
+}
+
+.haserrors {
+    background-color: red;
+}
+
+.noerrors {
+    background-color: green;
 }
 
 

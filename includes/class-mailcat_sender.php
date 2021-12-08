@@ -171,6 +171,11 @@ class MailCat_Sender {
 
         try {
             $gjs_html = get_post_meta($_REQUEST['mail_id'] , 'gjs-html', true);
+
+            if(empty($gjs_html)) {
+                throw new Exception("Empty Mail template");
+            }
+
 //    $gjs_css = get_post_meta($_REQUEST['mail_id'] , 'gjs-css', true);
 
             $doc = new DOMWrap\Document();
@@ -187,10 +192,14 @@ class MailCat_Sender {
         }
 
         catch(Exception $e) {
-            $this->errors = $e;
+            $error = array(
+                'msg' => $e->getMessage(),
+                'ids' => $this->getRootIds()
+            );
+            $this->errors = $error;
             if(!$this->is_rectifier) {
                 /** Only if this isn't a rectification mail do we log the error **/
-                $this->log_error(array('msg' => $e->getMessage() ), 'render');
+                $this->log_error($error, 'render');
             }
             return false;
         }
@@ -206,8 +215,6 @@ class MailCat_Sender {
             $this->rectify();
         }
 
-
-
         return $success;
     }
 
@@ -222,34 +229,38 @@ class MailCat_Sender {
      *
      **/
     private function rectify() {
-        $test = 1;
         $err = $this->getErrorToRectify();
-        $logged_errors = get_option("mailcat_errors");
+        $logged_errors_option = get_option("mailcat_errors");
 
-        $logged_error = $logged_errors[$this->getMailId()][$err['error_kind']][$err['error_index']];
+
+        $logged_errors_kind = $logged_errors_option[$this->getMailId()][$err['error_kind']];
+
+        $logged_error = $logged_errors_kind[$err['error_index']];
+
+        /** Remove all the rectified mail addresses from the error **/
         $logged_error['recipient_list'] = array_diff($logged_error['recipient_list'], $this->getToAddress());
+
         if(count($logged_error['recipient_list']) == 0) {
             /** No recipients left. Remove from the error log **/
-            unset($logged_errors[$this->getMailId()][$err['error_kind']][$err['error_index']]);
+            array_splice($logged_errors_kind,
+                intval($err['error_index']),
+                1
+            );
 
+            /** Set it on the global error array **/
+            $logged_errors_option[$this->getMailId()][$err['error_kind']] = $logged_errors_kind;
 
-            /** Null if empty array is left **/
-            if(count($logged_errors[$this->getMailId()][$err['error_kind']]) == 0) {
-                unset($logged_errors[$this->getMailId()][$err['error_kind']]);
+            /** Null the entire error_kind if empty array is left after slicing **/
+            if(count($logged_errors_kind) == 0) {
+                unset($logged_errors_option[$this->getMailId()][$err['error_kind']]);
             }
         }
         else {
-            $logged_errors[$this->getMailId()][$err['error_kind']][$err['error_index']]['recipient_list'] = $logged_error['recipient_list'];
+            $logged_errors_option[$this->getMailId()][$err['error_kind']][$err['error_index']]['recipient_list'] = $logged_error['recipient_list'];
         }
 
-        update_option('mailcat_errors', $logged_errors);
-
-
-
-
-
-        $test = 1;
-
+        update_option('mailcat_errors', $logged_errors_option);
+        $this->errors = $logged_errors_option;
     }
 
     private function resolve_html($node) {
@@ -351,7 +362,6 @@ class MailCat_Sender {
         return $node;
     }
 
-
     /** Log errors to the database, so we can provide the user with opportunities to rectify any errors **/
     private function log_error($error_data, $error_kind) {
         $logged_errors = get_option("mailcat_errors");
@@ -429,25 +439,24 @@ class MailCat_Sender {
 
         foreach($logged_errors[$this->mail_id][$error_kind] as $index => $error) {
 
-            if($new_error['data'] == $error_data) {
-                /** We have a match for the error data. Is the origin the same? */
-                if($new_error['origin'] == $origin) {
-                    /** The origin is the same. So really, this isn't something new, we just need to update the recipient list, and last_occured **/
-                    array_push($error['recipient_list'], $this->getToAddress());
-                    $error['last_occured'] = date("D M Y H:m");
+            if( ($error_kind == "id"     && compare_id_errors($new_error, $error))     ||
+                ($error_kind == "render" && compare_render_errors($new_error, $error))
+            ) {
+                /** The error already exists **/
+                array_push($error['recipient_list'], $this->getToAddress());
+                $error['last_occurred'] = date("D M Y H:m");
 
-                    $logged_errors[$this->mail_id][$error_kind][$index] = $error;
-                    update_option("mailcat_errors", $logged_errors);
+                $logged_errors[$this->mail_id][$error_kind][$index] = $error;
+                update_option("mailcat_errors", $logged_errors);
 
-                    return;
-                }
+                return;
             }
         }
 
         /** If we made it here, then this is a completely new error **/
 
 
-        $new_error['last_occured'] = date("D M Y H:m");
+        $new_error['last_occurred'] = date("D M Y H:m");
         $new_error['recipient_list'] = [$this->getToAddress()];
         array_push($logged_errors[$this->mail_id][$error_kind], $new_error);
         update_option("mailcat_errors", $logged_errors);

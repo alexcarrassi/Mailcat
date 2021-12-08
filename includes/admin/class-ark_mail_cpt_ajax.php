@@ -159,16 +159,10 @@ class Mail_CPT_AJAX {
         require_once ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/class-mailcat_sender.php";
         $sender = new MailCat_Sender($_REQUEST['mail_id']);
 
-        //We do not have IDs for the root datalinks yet
-        $root_ids = array();
-        foreach($this->datalinks->links as $link_id => $datalink) {
-            $root_id = $datalink->get_example_id();
-            $root_ids[$link_id] = $root_id;
-        }
-        $root_ids[array_key_last($root_ids)]= "";
+
 
         $sender->setToAddress($_REQUEST['recipient']);
-        $sender->setRootIds($root_ids);
+        $sender->setRootIds($_REQUEST['root_ids']);
         if($sender->send_mail()) {
             wp_send_json_success(array(
                 'msg' => 'success'
@@ -185,8 +179,6 @@ class Mail_CPT_AJAX {
 
     /** User wants to rectify ID errors by manually sending some emails **/
     function mailcat_rectify_id_error() {
-        $test = 1;
-
         require_once ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/class-mailcat_sender.php";
         $sender = new MailCat_Sender($_REQUEST['mail_id']);
 
@@ -200,7 +192,24 @@ class Mail_CPT_AJAX {
 
 
         if($sender->send_mail()) {
+
+            /** Rerender the Error tab **/
+            $this->errors = $sender->getErrors();
+            $this->errors = $this->errors[$this->mail_id] ?? null;
+
+
+            ob_start();
+            include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_errorlog.php");
+            $errortab_html = ob_get_clean();
+
+            ob_start();
+            render_errortab_badge($this->errors);
+            $errortab_badge = ob_get_clean();
+
+
             wp_send_json_success(array(
+                'errortab_html' => $errortab_html,
+                'errortab_badge' => $errortab_badge,
                 'msg' => 'Rectification succeeded. The mail has been sent to the recipient(s)'
             ));
         }

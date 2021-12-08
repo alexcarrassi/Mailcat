@@ -68,6 +68,11 @@ var Ark_Mail_CPT_JS = function() {
         var data = {};
         data['mail_id'] = ark_mail_cpt_config.mail_id;
         data['recipient'] = document.querySelector("#input_direct_mail").value;
+        data['root_ids'] = {};
+        document.querySelectorAll("#direct_mail_id_inputs input").forEach(function(input) {
+            data['root_ids'][input.name] = input.value;
+        });
+
         data['action'] = 'direct_mail';
 
         jQuery.ajax({
@@ -1997,20 +2002,19 @@ var Ark_Mail_CPT_JS = function() {
     /** Navbar **/
     self.navigation = function(e) {
         //Set the current active tab to inactive
+        let target = e.target.closest(".nav-item");
         document.querySelector(".mail_composer_tab.tab_active").classList.toggle("tab_active")
-        document.querySelector('#' + e.target.dataset.target).classList.toggle("tab_active");
+        document.querySelector('#' + target.dataset.target).classList.toggle("tab_active");
 
         //Same vor the navbar items
         document.querySelector(".nav-item.nav-item_active").classList.toggle("nav-item_active");
-        e.target.classList.toggle("nav-item_active");
+        target.classList.toggle("nav-item_active");
 
     }
 
     /** Datalinks tab **/
 
     self.keyup_delegation = function(e) {
-
-
         if(e.target.classList.contains("format_searcher_input")) {
             switch(e.keyCode) {
                 case 13:
@@ -2042,30 +2046,102 @@ var Ark_Mail_CPT_JS = function() {
         var render_errors_el = document.querySelector("#errorlog_render_errors");
 
 
-        id_errors_el.addEventListener("click", function(e) {
-           if(e.target.classList.contains("btn_send_rectification")) {
+        if(id_errors_el !== null) {
+            id_errors_el.addEventListener("click", function(e) {
+                if(e.target.classList.contains("btn_send_rectification")) {
 
-               self.submit_id_rectification_form(
-                   self.gather_id_rectification_form(e.target.closest(".rectification_form"))
-               )
-           }
-        });
+                    self.submit_id_rectification_form(
+                        self.gather_id_rectification_form(e.target.closest(".rectification_form"), "id")
+                    );
+                }
+            });
 
-        id_errors_el.addEventListener("input", function(e){
-           if(e.target.classList.contains("formfield_invalid")) {
-               e.target.classList.remove("formfield_invalid");
-           }
-           if(e.target.classList.contains("checkbox_check_all")) {
-               /** Check all checkboxes**/
-               e.target.closest(".rectification_form_mailing_list").querySelectorAll(".rectification_recipient_list input").forEach(function(checkbox) {
-                  checkbox.checked = e.target.checked;
-               });
-           }
+            id_errors_el.addEventListener("input", function(e){
+                if(e.target.classList.contains("formfield_invalid")) {
+                    e.target.classList.remove("formfield_invalid");
+                }
+                if(e.target.classList.contains("checkbox_check_all")) {
+                    /** Check all checkboxes**/
+                    e.target.closest(".rectification_form_mailing_list").querySelectorAll(".rectification_recipient_list input").forEach(function(checkbox) {
+                        checkbox.checked = e.target.checked;
+                    });
+                }
+            });
+        }
+
+        if(render_errors_el !== null) {
+            render_errors_el.addEventListener("click", function(e) {
+                if(e.target.classList.contains("btn_send_rectification")) {
+                    self.submit_id_rectification_form(
+                        self.gather_id_rectification_form(e.target.closest(".rectification_form"), "render")
+                    )
+                }
+            });
+
+            render_errors_el.addEventListener("input", function(e){
+                if(e.target.classList.contains("checkbox_check_all")) {
+                    /** Check all checkboxes**/
+                    e.target.closest(".rectification_form_mailing_list").querySelectorAll(".rectification_recipient_list input").forEach(function(checkbox) {
+                        checkbox.checked = e.target.checked;
+                    });
+                }
+            });
+        }
+
+        /** Pagination **/
+        errorlog_tab.querySelectorAll(".paginator").forEach(function(paginator){
+            let btn_prev = paginator.querySelector('.btn_errorlog_back');
+            let btn_next = paginator.querySelector('.btn_errorlog_next');
+            let btn_numbered = paginator.querySelectorAll('.btn_errorlog_numbered')
+
+            btn_prev.addEventListener("click", function(e) {
+                let btn_active = paginator.querySelector('.btn_errorlog_pag_active');
+                let index_active = parseInt(btn_active.innerHTML.trim());
+
+                if(index_active > 1) {
+                    let new_active = index_active - 1;
+                    self.pagination_btn_click(paginator, btn_numbered[new_active - 1],paginator.dataset.error_template + new_active);
+                }
+            });
+
+            btn_next.addEventListener("click", function(e) {
+                let btn_active = paginator.querySelector('.btn_errorlog_pag_active');
+                let index_active = parseInt(btn_active.innerHTML.trim());
+
+                if(index_active < parseInt(btn_numbered[btn_numbered.length-1].innerHTML.trim())) {
+                    let new_active = index_active + 1;
+                    self.pagination_btn_click(paginator, btn_numbered[new_active - 1], paginator.dataset.error_template + new_active);
+                }
+            });
+
+            btn_numbered.forEach(function(btn, index) {
+                btn.addEventListener("click", function(e) {
+                    let btn_active = paginator.querySelector('.btn_errorlog_pag_active');
+                    let index_active = parseInt(btn_active.innerHTML.trim());
+                    if(btn !== btn_active) {
+                        self.pagination_btn_click(paginator,btn, btn.dataset.target)
+                    }
+                });
+            });
         });
     }
 
+    self.pagination_btn_click = function(paginator, btn, new_index) {
+        console.log(new_index);
+
+        /** Switch active pagination number **/
+        paginator.querySelector(".btn_errorlog_pag_active").classList.remove("btn_errorlog_pag_active");
+        btn.classList.add("btn_errorlog_pag_active");
+
+        /** Switch active errorlog **/
+        let errorlog_container = paginator.closest(".errorlog_errors_container");
+        errorlog_container.querySelector(".active_errorlog").classList.remove("active_errorlog");
+        errorlog_container.querySelector("#" + new_index).classList.add("active_errorlog");
+
+    }
+
     /** Gathers the data for the ID Rectification form, and submits it it **/
-    self.gather_id_rectification_form = function(form) {
+    self.gather_id_rectification_form = function(form, error_kind) {
         let valid = true;
         let formData = {};
 
@@ -2100,8 +2176,8 @@ var Ark_Mail_CPT_JS = function() {
 
         formData['ids'] = ids;
         formData['recipients'] = recipients;
-        formData['error_index'] = parseInt(document.querySelector(".btn_id_errorlog_pag_active").innerHTML) - 1;
-        formData['error_kind'] = 'id';
+        formData['error_index'] = parseInt(document.querySelector(".btn_errorlog_pag_active").innerHTML) - 1;
+        formData['error_kind'] = error_kind;
 
 
         return formData;
@@ -2120,11 +2196,13 @@ var Ark_Mail_CPT_JS = function() {
             data: formdata,
             success : function(response) {
                 if(response['success']) {
-                    alert("done")
+                    alert(response['data']['msg']);
+                    document.querySelector("#tab_errorlog").innerHTML = response['data']['errortab_html'];
+                    jQuery('#badge_error_count').replaceWith(response['data']['errortab_badge']);
+                    self.initialize_errorlog_tab();
                 }
                 else {
                     alert(response['data']['msg']);
-                    console.log(response);
                 }
             }
         });

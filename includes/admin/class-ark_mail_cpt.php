@@ -169,6 +169,7 @@ class Ark_Mail_CPT {
 
             /** Get the DataLinks for this post id **/
             $this->datalinks = get_post_meta($this->mail_id, 'datalink', true);
+            $test = 1;
         }
     }
 
@@ -247,8 +248,17 @@ class Ark_Mail_CPT {
     public function output_direct_mail_metabox() {
         ?>
         <div>
-            <h3>Mail directly to: </h3>
-            <input id="input_direct_mail" type="text"/>
+            <h3>Mail directly: </h3>
+
+            <span id="direct_mail_id_inputs">
+                <?php foreach($this->datalinks->links as $link_id => $root_link) :?>
+                    <strong><label for="direct_mail_<?php echo $link_id; ?>"><?php echo $link_id; ?></label> </strong>
+                    <input id="direct_mail_<?php echo $link_id; ?>" type="number" name="<?php echo $link_id?>" value="<?php echo $root_link->db_id; ?>"/>
+                <?php endforeach; ?>
+            </span>
+            <strong><label for="recipient">Mail address</label> </strong>
+
+            <input name="recipient" id="input_direct_mail" type="text" value="aazoutewelle@gmail.com"/>
             <button id="btn_direct_mail" type="button" >Mail</button>
         </div>
         <?php

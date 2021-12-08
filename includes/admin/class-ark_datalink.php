@@ -79,6 +79,9 @@ class Ark_DataLink {
 
         $next = array_shift($hierarchy_path);
 
+        if($next == "root") {
+            return $this;
+        }
         if(isset($this->links[$next])) {
             if(count($hierarchy_path) == 0 && $this->links[$next]->many && !$single) {
                 /** We need to do a forward check. The next link is our target.
@@ -406,34 +409,43 @@ class DataLink_Utils {
     }
 
     public static function is_many($child, $parent) {
-        switch($parent->type) {
-            case 'post' :
-                switch($child->type) {
-                    case 'comment':
-                        return true;
-                    default:
-                        return false;
+        if(isset($parent->type) ) {
+            switch($parent->type) {
+                case 'post' :
+                    switch($child->type) {
+                        case 'comment':
+                            return true;
+                        default:
+                            return false;
+                    }
+                case 'user' : {
+                    switch($child->type) {
+                        case 'comment':
+                            return true;
+                        default:
+                            return false;
+                    }
                 }
-            case 'user' : {
-                switch($child->type) {
-                    case 'comment':
-                        return true;
-                    default:
-                        return false;
+                case 'taxonomy' : {
+                    switch($child->type) {
+                        case 'post':
+                            return true;
+                        default:
+                            return false;
+                    }
                 }
-            }
-            case 'taxonomy' : {
-                switch($child->type) {
-                    case 'post':
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-            default:
-                return false;
+                default:
+                    return false;
 
+            }
         }
+
+        /** If we're here, it means the parent has no type: it must be the root node
+         * TODO: determine whether it's better to use a is_root flag
+         */
+
+    return false;
+
     }
 
     public static function get_available_link_types() {
@@ -639,6 +651,8 @@ class Basic_DataFetcher {
         add_filter('mc-get_data-comment', array($this, 'get_comment_data'), 10, 2);
         add_filter('mc-get_data-user', array($this, 'get_user_data'), 10, 2);
         add_filter('mc-get_data-term', array($this, 'get_term_data'), 10, 2);
+        add_filter('mc-get_data-taxonomy', array($this, 'get_term_data'), 10, 2);
+
 
             /** Data Relational */
         add_filter('mc-get_data-user-post', array($this, 'user_post_data'), 10, 2);
@@ -750,6 +764,7 @@ class Basic_DataFetcher {
         $term_meta = array_map(function($item) {return array_values($item)[0]; }, get_term_meta($datalink_node->db_id));
         $datalink_node->data['term_meta']['data'] = array_merge($datalink_node->data['term_meta']['data'], $term_meta);
     }
+
 
 
     public function post_comment_data($datalink_node, $post_id) {

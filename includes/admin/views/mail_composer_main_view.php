@@ -29,16 +29,7 @@
 
         <div id="nav-item_errorlog" class="nav-item" data-target="tab_errorlog">
             Error log
-            <?php if($this->errors != null) :
-                $total_count = 0;
-                $total_count += isset($this->errors['id']) ? count($this->errors['id']) : 0;
-                $total_count += isset($this->errors['render']) ? count($this->errirs['render']) : 0;
-                ?>
-
-                <div id="badge_error_count">
-                    <?php echo $total_count < 100 ? $total_count : "99+"; ?>
-                </div>
-            <?php endif; ?>
+            <?php render_errortab_badge($this->errors);?>
         </div>
     </div>
 
@@ -46,8 +37,9 @@
         <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_datalinks.php"); ?>
         <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_contentcreation.php"); ?>
         <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_scheduling.php"); ?>
-        <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_errorlog.php"); ?>
-
+        <div id="tab_errorlog" class="mail_composer_tab">
+            <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/tab_mailcomposer_errorlog.php"); ?>
+        </div>
 
     </div>
 
