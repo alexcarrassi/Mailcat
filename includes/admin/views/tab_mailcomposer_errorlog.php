@@ -168,19 +168,10 @@
                     </div>
                 </div>
 
-                <?php
-                    /**  Get the first error
-                         Deduce all; the different ids
-                     *   Make inputs for them
-                     *   fill in what was filled in
-                     */
-                $error = $id_errors[0];
 
-                ?>
-                <strong> <?php echo count($id_errors); ?> </strong>
             </div>
         <?php endif; ?>
-
+        <br> <br>
         <?php if($render_errors != null) : ?>
             <div id="errorlog_render_errors">
                 <div class="errorlog_errors_header">

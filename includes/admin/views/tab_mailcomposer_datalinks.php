@@ -34,9 +34,11 @@
                     <?php
                         /** Recursively render each currently configured DataLinks **/
                         $depth = 0;
-                        foreach($this->datalinks->links as  $id => $datalink_node) {
-                            include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/datalink_row.php");
-                        }
+                        if(!empty($this->datalinks)) :
+                            foreach($this->datalinks->links as  $id => $datalink_node) {
+                                include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/datalink_row.php");
+                            }
+                        endif;
                     ?>
                 </ul>
             </div>
@@ -50,18 +52,15 @@
             <?php /** Display variable sets of the first object **/
 
                 /** IF IS ARRAY **/
-                if(!empty($this->datalinks)) {
+                if(!empty($this->datalinks) && array_key_first($this->datalinks->links) != null) {
                     $first_key = array_key_first($this->datalinks->links);
                     $child = $this->datalinks->links[$first_key];
-
 
                     $object_id = $child->get_example_id();
                     $child->get_variable_sets();
 
-
                     Ark_Mail_CPT::render_Variable_sets($child->data, $child);
                 }
-
             ?>
         </div>
     </div>
@@ -217,3 +216,6 @@
         </div>
     </div>
 </div>
+
+
+

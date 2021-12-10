@@ -39,7 +39,11 @@ class Ark_Mail_CPT {
         wp_enqueue_style( 'ark_mail_cpt_css', ARK_MAIL_COMPOSER_ROOT_URI . "/includes/admin/ark_mail_cpt.css" );
 
 
-        $vars = $this->datalinks->gather_variables();
+
+        $test = acf_get_field_groups(array('post_type' => 'wc_booking'));
+
+
+        $vars = !empty($this->datalinks) ? $this->datalinks->gather_variables() : null;
         wp_localize_script('ark_mail_cpt_js', 'ark_mail_cpt_config',
             array(
                     'ajax_url' => admin_url( 'admin-ajax.php'),
@@ -116,7 +120,7 @@ class Ark_Mail_CPT {
 
     public function includes() {
         if(is_admin()) {
-            include_once __DIR__ . "/class-ark_datalink.php";
+            include_once __DIR__ . "/class-mailcat_datalink.php";
             include_once __DIR__ . "/class-ark_mail_cpt_ajax.php";
 
 
@@ -169,6 +173,9 @@ class Ark_Mail_CPT {
 
             /** Get the DataLinks for this post id **/
             $this->datalinks = get_post_meta($this->mail_id, 'datalink', true);
+            if(!$this->datalinks) {
+                $this->datalinks = array();
+            }
             $test = 1;
         }
     }
@@ -251,10 +258,12 @@ class Ark_Mail_CPT {
             <h3>Mail directly: </h3>
 
             <span id="direct_mail_id_inputs">
-                <?php foreach($this->datalinks->links as $link_id => $root_link) :?>
-                    <strong><label for="direct_mail_<?php echo $link_id; ?>"><?php echo $link_id; ?></label> </strong>
-                    <input id="direct_mail_<?php echo $link_id; ?>" type="number" name="<?php echo $link_id?>" value="<?php echo $root_link->db_id; ?>"/>
-                <?php endforeach; ?>
+                <?php if(!empty($this->datalinks)) : ?>
+                    <?php foreach($this->datalinks->links as $link_id => $root_link) :?>
+                        <strong><label for="direct_mail_<?php echo $link_id; ?>"><?php echo $link_id; ?></label> </strong>
+                        <input id="direct_mail_<?php echo $link_id; ?>" type="number" name="<?php echo $link_id?>" value="<?php echo $root_link->db_id; ?>"/>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </span>
             <strong><label for="recipient">Mail address</label> </strong>
 

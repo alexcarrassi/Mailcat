@@ -171,6 +171,7 @@ class MailCat_Sender {
 
         try {
             $gjs_html = get_post_meta($_REQUEST['mail_id'] , 'gjs-html', true);
+//            $gjs_html = "";
 
             if(empty($gjs_html)) {
                 throw new Exception("Empty Mail template");

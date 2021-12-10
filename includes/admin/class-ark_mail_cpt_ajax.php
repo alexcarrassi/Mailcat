@@ -1,7 +1,5 @@
 <?php
 /** Ark Mail CPT ajax functions **/
-include_once(ARK_MAIL_COMPOSER_ROOT_DIR ."/includes/admin/class-ark_datalinks.php");
-
 class Mail_CPT_AJAX {
     private Ark_DataLink $datalinks;
 
@@ -51,9 +49,12 @@ class Mail_CPT_AJAX {
         $link_name = $_REQUEST['link_name'];
 
         /** Get configured formats **/
-        $datalink = isset($_REQUEST['hierarchy_path']) ? $this->datalinks->get_child_by_path($_REQUEST['hierarchy_path']) : null;
+        $datalink = isset($_REQUEST['hierarchy_path']) ?
+            $this->datalinks->get_child_by_path($_REQUEST['hierarchy_path'])
+            :
+            new Ark_DataLink(array('name' => $_REQUEST['link_name'], 'type' => $_REQUEST['link_type']));
 
-        $object_id = $datalink->get_example_id();
+        $datalink->get_example_id();
         $datalink->get_variable_sets();
 
         ob_start();
