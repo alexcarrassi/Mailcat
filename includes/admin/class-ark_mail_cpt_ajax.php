@@ -7,8 +7,12 @@ class Mail_CPT_AJAX {
         add_action("wp_ajax_render_example_variable_set", array($this, "render_variable_set"));
         add_action("wp_ajax_nopriv_render_example_variable_set", array($this,"render_variable_set"));
 
-        add_action("wp_ajax_get_possible_datalinks", array($this,"get_possible_datalinks"));
-        add_action("wp_ajax_nopriv_get_possible_datalinks", array($this,"get_possible_datalinks"));
+        add_action("wp_ajax_render_primary_datalink_form", array($this,"render_primary_datalink_form"));
+        add_action("wp_ajax_nopriv_render_primary_datalink_form", array($this,"render_primary_datalink_form"));
+
+        add_action("wp_ajax_render_secondary_selection_form", array($this,"render_secondary_selection_form"));
+        add_action("wp_ajax_nopriv_render_secondary_selection_form", array($this,"render_secondary_selection_form"));
+
 
         add_action("wp_ajax_delete_datalink", array($this,"delete_datalink"));
         add_action("wp_ajax_nopriv_delete_datalink", array($this,"delete_datalink"));
@@ -63,7 +67,7 @@ class Mail_CPT_AJAX {
     }
 
 
-    function get_possible_datalinks() {
+    function render_primary_datalink_form() {
         $datalink_object = array(
             "link_name"=> $_REQUEST['link_name'],
             "link_type" => $_REQUEST['link_type']
@@ -71,10 +75,27 @@ class Mail_CPT_AJAX {
         $possible_link_types = DataLink_Utils::get_all_possible_children($datalink_object);
 
         ob_start();
-        include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/select_datalink_type.php");
+        include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-primary.php");
         wp_send_json_success(array(
             'html' => ob_get_clean()
         ));
+    }
+
+    function render_secondary_selection_form() {
+        /** Preprocess  **/
+
+        $link_spec = array(
+            'link_type' => $_REQUEST['link_type'],
+            'link_spec' => $_REQUEST['link_spec']
+        );
+
+        ob_start();
+        $forms = DataLink_Utils::get_secondary_children_forms($link_spec);
+
+        wp_send_json_success(array(
+            'html' => ob_get_clean()
+        ));
+        $test = 1;
     }
 
 

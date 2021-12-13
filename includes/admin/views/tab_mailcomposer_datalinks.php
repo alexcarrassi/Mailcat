@@ -22,7 +22,7 @@
         </div>
 
             <div class="row_add_datalink_hierarchy">
-                <a href="#TB_inline?&width=800&height=900&inlineId=dialog_add_datalink_" class="thickbox button button-primary button-large">
+                <a href="#TB_inline?&width=800&height=900&inlineId=dialog_add_datalink_" class="thickbox button button-primary button-large new_root_datalink">
                     + Add new hierarchy
                 </a>
 
@@ -68,106 +68,6 @@
 
     <style>
 
-        #TB_ajaxContent {
-            width: auto !important;
-            height: auto !important;
-        }
-
-        #dialog_add_datalink {
-            display: flex;
-            flex-direction:column;
-        }
-
-
-        #dialog_add_datalink .variables_container {
-            max-height: 300px;
-            overflow: auto;
-        }
-
-        #dialog_add_datalink .main{
-            display: flex;
-            flex-direction: column;
-        }
-        #dialog_add_datalink_header {
-            font-size: 1.5em;
-            font-weight:bold;
-            text-align: center;
-            padding: 10px;
-
-
-            flex:1;
-        }
-
-        #dialog_add_datalink_hierarchy_path {
-            display:flex;
-            justify-content:center;
-            padding:5px;
-
-            flex: 1;
-        }
-
-        #dialog_add_datalink_hierarchy_path > div{
-            padding: 5px;
-        }
-
-        #dialog_add_datalink_hierarchy_path > div+div::before{
-            content: ">";
-            padding-right:5px;
-            font-size: 1.2em;
-        }
-
-        #dialog_add_datalink_body {
-            display:flex;
-            flex:13;
-            overflow: auto;
-
-            margin: 5px 5px 10px 5px;
-
-        }
-
-        #dialog_add_datalink_body > div {
-            flex:1;
-            overflow: auto;
-        }
-
-        #dialog_add_datalink_inputs {
-            padding: 5px 15px 5px 0px;
-
-        }
-
-        #dialog_add_datalink_inputs div {
-            display: flex;
-            margin: 8px;
-        }
-
-        #dialog_add_datalink_inputs div label{
-            float: left;
-            width: 30%;
-            align-self: center;
-            font-size: 0.9em;
-            padding: 5px;
-        }
-
-        #dialog_add_datalink_inputs div label+* {
-            width: 70%;
-        }
-
-        #dialog_add_datalink_variable_sets {
-            padding: 5px 0px 5px 15px;
-        }
-
-
-        #dialog_add_datalink_footer {
-            display: flex;
-            justify-content: center;
-
-            flex:1;
-        }
-
-        #dialog_add_datalink_footer button {
-
-        }
-
 
 
     </style>
@@ -188,23 +88,20 @@
             </div>
 
             <div id="dialog_add_datalink_body">
-                <div id="dialog_add_datalink_inputs">
-                    <div>
-                        <label for="dialog_add_datalink_type_selector">Link type </label>
-
-                        <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/select_datalink_type.php"); ?>
-                    </div>
-
-                    <div>
-                        <label for="dialog_add_datalink_description">
-                            Description
-                        </label>
-                        <input type="text" id="dialog_add_datalink_description" placeholder="My new link"/>
-                    </div>
+                <div id="dialog_add_datalink_primary">
+                    <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-primary.php"); ?>
                 </div>
 
-                <div id="dialog_add_datalink_variable_sets">
 
+                <div id="dialog_add_datalink_secondary">
+                    <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary.php"); ?>
+                </div>
+
+                <div id="variable_sets">
+                    <h2>Variable sets</h2>
+                    <div id="dialog_add_datalink_variable_sets">
+
+                    </div>
                 </div>
             </div>
 

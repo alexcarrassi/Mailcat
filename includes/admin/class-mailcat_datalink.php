@@ -1,4 +1,5 @@
 <?php
+include_once (ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/class-datalink_utils.php");
 
 class Ark_DataLink {
     public int $ID = 0;
@@ -256,391 +257,16 @@ class Ark_DataLink {
 
 
 
-//UTILS
-class DataLink_Utils {
-
-
-    public static function get_datalink_variables() {
-        return ["var"];
-    }
-
-    private static function get_post_types() {
-        global $wpdb;
-
-        $sql = "SELECT DISTINCT post_type as link_name, 'post' as link_type FROM " . $wpdb->prefix . "posts";
-
-        return $wpdb->get_results($sql, ARRAY_A);
-    }
-
-    private static function get_taxonomies() {
-        global $wpdb;
-
-        $sql = "SELECT DISTINCT taxonomy AS link_name, 'taxonomy' AS link_type FROM " . $wpdb->prefix . "term_taxonomy";
-
-        return $wpdb->get_results($sql, ARRAY_A);
-    }
-
-    private static function get_post_term_relationships($link_name) {
-        global $wpdb;
-
-        $sql_taxonomies = "
-                            SELECT DISTINCT tt.taxonomy as 'link_name', 'taxonomy' as 'link_type' 
-                            FROM wp_posts post
-			                    LEFT JOIN
-				                    wp_term_relationships tt_r 
-				                ON tt_r.object_id = post.ID
-			                    LEFT JOIN 
-			        	            wp_term_taxonomy tt
-				                ON tt.term_taxonomy_id = tt_r.term_taxonomy_id
-                            WHERE post.post_type = %s
-                            AND tt.taxonomy IS NOT NULL";
-
-        return $wpdb->get_results($wpdb->prepare($sql_taxonomies, array($link_name)), ARRAY_A);
-    }
-
-    private static function get_term_post_relationships($link_name) {
-        global $wpdb;
-
-        $sql_taxonomies = "
-                            SELECT DISTINCT post.post_type as 'link_name', 'post' as 'link_type', true as 'many' 
-                            FROM wp_posts post
-			                    LEFT JOIN
-				                    wp_term_relationships tt_r 
-				                ON tt_r.object_id = post.ID
-			                    LEFT JOIN 
-			        	            wp_term_taxonomy tt
-				                ON tt.term_taxonomy_id = tt_r.term_taxonomy_id
-                            WHERE tt.taxonomy = %s
-                            AND tt.taxonomy IS NOT NULL";
-
-        return $wpdb->get_results($wpdb->prepare($sql_taxonomies, array($link_name)), ARRAY_A);
-    }
-
-    private static function get_user_term_relationships() {
-        global $wpdb;
-
-        $sql_taxonomies = "SELECT DISTINCT tt.taxonomy as 'link_name', 'taxonomy' as 'link_type' 
-                            FROM wp_users as user
-			                    LEFT JOIN
-				                    wp_term_relationships tt_r 
-				                ON tt_r.object_id = user.ID
-			                    LEFT JOIN 
-			        	            wp_term_taxonomy tt
-				                ON tt.term_taxonomy_id = tt_r.term_taxonomy_id
-                            WHERE tt.taxonomy IS NOT NULL";
-
-        return $wpdb->get_results($sql_taxonomies, ARRAY_A);
-    }
-
-    /** Gets all the possible children types for a datalink**/
-    public static function get_all_possible_children($datalink) {
-        if(empty($datalink->type) || empty($datalink->name)) {
-            /** Get all possible datalinks */
-            $possible_links = array(
-                array (
-                    'link_name' => 'wp_users',
-                    'link_type' => 'user'
-                ),
-                array(
-                    'link_name' => 'wp_comments',
-                    'link_type' => 'comment',
-                ),
-            );
-
-            $possible_links = array_merge($possible_links, self::get_post_types(), self::get_taxonomies());
-
-            return $possible_links;
-        }
-
-
-        switch($datalink->type) {
-            case "post":
-
-                $possible_links = array(
-                    array (
-                        'link_name' => 'wp_users',
-                        'link_type' => 'user'
-                    ),
-                    array(
-                        'link_name' => 'wp_comments',
-                        'link_type' => 'comment',
-                        'many' => true
-                    ),
-
-                );
-
-                /** Get terms  through term relationships **/
-
-                $possible_links = array_merge($possible_links, self::get_post_term_relationships($datalink->name));
-
-
-                break;
-            case "user":
-                $possible_links = array (
-                    array(
-                        'link_name' => 'wp_comments',
-                        'link_type' => 'comment',
-                        'many' => true
-                    )
-                );
-
-                $possible_links = array_merge($possible_links, self::get_user_term_relationships(), self::get_post_types());
-
-                break;
-
-            case "comment":
-                $possible_links = array(
-                    array (
-                        'link_name' => 'wp_users',
-                        'link_type' => 'user'
-                    )
-                );
-
-                break;
-            case "taxonomy":
-                $possible_links = self::get_term_post_relationships($datalink->name);
-                break;
-        }
-
-        return $possible_links;
-    }
-
-    public static function is_many($child, $parent) {
-        if(isset($parent->type) ) {
-            switch($parent->type) {
-                case 'post' :
-                    switch($child->type) {
-                        case 'comment':
-                            return true;
-                        default:
-                            return false;
-                    }
-                case 'user' : {
-                    switch($child->type) {
-                        case 'comment':
-                            return true;
-                        default:
-                            return false;
-                    }
-                }
-                case 'taxonomy' : {
-                    switch($child->type) {
-                        case 'post':
-                            return true;
-                        default:
-                            return false;
-                    }
-                }
-                default:
-                    return false;
-
-            }
-        }
-
-        /** If we're here, it means the parent has no type: it must be the root node
-         * TODO: determine whether it's better to use a is_root flag
-         */
-
-    return false;
-
-    }
-
-    public static function get_available_link_types() {
-        global $wpdb;
-
-        $sql = "SELECT DISTINCT post_type as link_name, 'post' as link_type FROM " . $wpdb->prefix . "posts";
-
-        return $wpdb->get_results($sql, ARRAY_A);
-    }
-
-    /** Get all the variable sets belonging to a link name
-     *
-     * @var $link_name - name of the object linked to the Mail. example: wc_booking
-     * @var $example_id - A randomly selected id of an object of type: $link_name
-     *
-     * TODO: Currently only works for post_types. Make it work for terms as well
-     **/
-    public static function get_datalink_variable_sets($link_name, $link_type, $object_id) {
-        global $wpdb;
-
-        /** Get all possible variable sets */
-        switch($link_type) {
-            case "post":
-                $possible_links = array(
-                    $wpdb->prefix . 'posts',
-                    $wpdb->prefix . 'postmeta'
-                );
-                break;
-            case "user":
-                $possible_links = array (
-                    $wpdb->prefix . "users",
-                    $wpdb->prefix . "usermeta"
-                );
-                break;
-            case "taxonomy":
-                $possible_links = array(
-                    $wpdb->prefix . "termmeta",
-                    $wpdb->prefix . "terms",
-                );
-                break;
-
-            case "comment" :
-                $possible_links = array(
-                    $wpdb->prefix . "comments",
-                    $wpdb->prefix . "commentmeta"
-                );
-                break;
-        }
-
-        /** Getting all tables associated by name **/
-        $table_names = self::get_external_table_names($link_name);
-
-        $possible_links = array_merge($possible_links, $table_names);
-
-
-        $variable_sets = array();
-
-        /** Get all the saved datalinks **/
-        if(!empty($possible_links)) {
-            foreach($possible_links as $link) {
-                switch($link){
-
-                    case $wpdb->prefix . "terms" :
-
-                        $variable_sets['term_data'] = array(
-                            'display_name' => 'Term Data',
-                            'vars' => DataLink_Utils::get_object_vars(get_object_vars(get_term($object_id)))
-                        );
-                        break;
-
-                    case $wpdb->prefix . "termmeta":
-                        $sql = "SELECT DISTINCT meta_key,meta_value FROM ". $wpdb->prefix . "termmeta WHERE term_id  = %s";
-                        $term_metas = $wpdb->get_results($wpdb->prepare($sql, array($object_id)), ARRAY_A);
-                        $obj = array();
-                        foreach($term_metas as $term_meta) {
-                            $obj[$term_meta['meta_key']] = $term_meta['meta_value'];
-                        }
-
-                        $variable_sets['term_meta'] = array(
-                            'display_name' => 'Term Meta',
-                            'vars' => $obj
-                        );
-
-                        break;
-
-                    default:
-                        /** external table **/
-                        /** TODO: The user must be able to define an identifying column **/
-
-                        $identifying_column = isset($table_config['identifying_clumn']) ? $table_config['identifying_column'] : null;
-                        if($identifying_column == null) {
-
-                            /** Try and get the identifying column from the table **/
-
-                            $sql = "SELECT DISTINCT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = %s";
-                            $table_columns = $wpdb->get_row($wpdb->prepare($sql, array($link)),ARRAY_A);
-                            $identifying_column = $link_name . "_id";
-                            if(!in_array($identifying_column, $table_columns)) {
-
-                                break;
-                            }
-                        }
-
-                        $sql = "SELECT * FROM $link WHERE $identifying_column = $object_id";
-                        $variable_sets[$link] = $wpdb->get_row($sql);
-                        break;
-                }
-
-            }
-        }
-
-        return $variable_sets;
-    }
-
-    /**
-     * Gets the external table names for a link
-     *
-     * These include tables that are not included in standard Wordpress Custom Post/Taxonomy functionalities.
-     * @param $link_name
-     */
-    private static function get_external_table_names($link_name) {
-        global $wpdb;
-
-        /** Getting all tables associated by name **/
-        $sql = "SELECT DISTINCT TABLE_NAME FROM information_schema.tables  WHERE TABLE_NAME REGEXP '" . $link_name . "[^s]'";
-        return $wpdb->get_col($sql);
-    }
-
-    /**
-     * Returns an array of available formatting functions.
-     * The structure is:
-     *
-     * array (
-     *   user_friendly_name =>
-     *      array (
-     *          php_name => name1,
-     *          args    => []
-     *   )
-     */
-    public static function formatting_functions_array() {
-        return array(
-            __('Uppercase letters', 'ark_mail_composer') => array (
-                'name' => 'strtoupper',
-                'desc' => __('Grab a part of a string of text'),
-                'args' => []
-            ),
-            __('Lowercase letters', 'ark_mail_composer') => array(
-                'name' => 'strtolower',
-                'desc' => __('Grab a part of a string of text'),
-                'args' => []
-            ),
-
-            __('Substring', 'ark_mail_composer') => array (
-                'name' => 'substr',
-                'desc' => __('Grab a part of a string of text'),
-
-                'args' => array(
-                    'offset' => __('Start', 'mail_composer'),
-                    'length' => __('Amount', 'mail_composer')
-                )
-            ),
-
-            __('Remove whitespace', 'ark_mail_composer') => array(
-                'name' => 'trim',
-                'desc' => __('Grab a part of a string of text'),
-
-                'args' => []
-            ),
-
-            __('Repeat', 'ark_mail_composer') => array (
-                'name' => 'str_repeat',
-                'desc' => __('Repeat a string a certain amount of times'),
-
-                'args' => array(
-                    'times' => __('Times', 'mail_composer')
-                )
-            )
-
-        );
-    }
-
-    /**
-     * For some reason, catching errors from a filter doesn't work without explicitly throwing an error
-     */
-    public static function get_object_vars($object) {
-        if($object == null) {
-            throw new Exception("Nothing found for ID", 1);
-        }
-        return get_object_vars($object);
-    }
-}
-
 
 /**
  * In the data fetcher, you MUST supply the datanode with a db_id
  * Class Basic_DataFetcher
+ *
+ * Handles Basic wordpress functionalities
  */
 class Basic_DataFetcher {
+    private $standard_taxonomies = ["category", "post_tag", "post_format"];
+
     public function __construct() {
 
             /** Data Singular **/
@@ -660,6 +286,189 @@ class Basic_DataFetcher {
         add_filter('mc-get_example_id-user', array($this, 'get_user_example_id'), 10, 1);
         add_filter('mc-get_example_id-comment', array($this, 'get_comment_example_id'), 10, 1);
         add_filter('mc-get_example_id-taxonomy', array($this, 'get_taxonomy_example_id'), 10, 1);
+
+
+        /** Possible DataLinks primary **/
+
+        add_filter("mc-get_primary_datalink_selection-posts", array($this, 'primary_posts_selection'), 10, 1);
+        add_filter("mc-get_primary_datalink_selection-tax", array($this, 'primary_tax_selection'), 10, 1);
+        add_filter("mc-get_primary_datalink_selection-users", array($this, 'primary_users_selection'), 10, 1);
+
+        /** Possible Datalinks secondary **/
+
+        add_filter("mc-get_secondary_datalink_selection-posts", array($this, 'secondary_posts_selection'), 10, 1);
+
+
+    }
+
+
+
+                /** Possible DataLinks primary
+                 *
+                 *  The first part of the Add Datalink dialog
+                 *  Renders the necessary inputs to select a certain type of datalink, such as a post type
+                 **/
+    public function primary_posts_selection($primary_selection) {
+        /** foreach post type, get the ones that are relevant and organize **/
+        if(!isset($primary_selection['posts_standard'])) {
+            $primary_selection['posts_standard'] = array(
+                'display_name' => __("Standard WordPress posts", "mailcat"),
+                'selection' => array_reduce(
+                    $primary_selection['post_types'],
+                    function($acc, $item) {
+
+                        if( in_array($item->name, ["post", "attachment", "revisions", "nav_menu_item"])) {
+                            $selection = array(
+                                'data' => array('type' => 'post', 'post_type' => $item->name),
+                                'display_name' => $item->label != false ? $item->label :  ucfirst(implode(" ",explode("_", $item->name)))
+                            );
+
+                            $acc[] = $selection;
+                        }
+                        return $acc;
+                    },
+                    []
+                )
+            );
+        }
+
+
+        /** Remove post types if necessary **/
+        $primary_selection['post_types'] = array_reduce(
+            $primary_selection['post_types'],
+            function($acc, $item) {
+                if( !in_array($item->name, ["post", "attachment", "revisions", "nav_menu_item"])) {
+                    $acc[] = $item;
+                }
+
+                return $acc;
+            },
+            []
+        );
+
+        return $primary_selection;
+    }
+    public function primary_tax_selection($primary_selection) {
+        if(!isset($primary_selection['tax_standard'])) {
+            $primary_selection['tax_standard'] = array(
+                'display_name' => __("Standard WordPress taxonomies", "mailcat"),
+                'selection' => array_reduce(
+                    $primary_selection['taxonomies'],
+                    function($acc, $item) {
+
+                        if(in_array($item->name, ["post_tag", "category", "post_format"])) {
+
+                            $selection = array(
+                                'data' => array('type'=> 'taxonomy', 'taxonomy' => $item->name),
+                                'display_name' => $item->label != false ? $item->label :  ucfirst(implode(" ",explode("_", $item->name)))
+                            );
+
+                            $acc[] = $selection;
+
+                        }
+                        return $acc;
+                    },
+                    []
+                )
+            );
+        }
+
+        /** Remove post types if necessary **/
+        $primary_selection['taxonomies'] = array_reduce(
+            $primary_selection['taxonomies'],
+            function($acc, $item) {
+                if( !in_array($item->name, ["post_tag", "category", "post_format"])) {
+                    $acc[] = $item;
+                }
+
+                return $acc;
+            },
+            []
+        );
+        return $primary_selection;
+
+    }
+    public function primary_users_selection($primary_selection) {
+
+        if(!isset($primary_selection['general_users'])) {
+            $primary_selection['general_users'] = array(
+                'display_name' => __("Standard WordPress users", "mailcat"),
+                'selection' => array_reduce(
+                    $primary_selection['user_types'],
+                    function($acc, $item) {
+                        if(in_array($item->name, ["administrator", "editor", "author", "contributor", "subscriber"])) {
+
+                            $selection = array(
+                                'data' => array('type'=> 'user', 'role' => $item->name),
+                                'display_name' => ucfirst($item->name)
+                            );
+
+                            $acc[] = $selection;
+                        }
+                        return $acc;
+                    },
+                    []
+                )
+            );
+        }
+
+
+        /** Remove post types if necessary **/
+        $primary_selection['user_types'] = array_reduce(
+            $primary_selection['user_types'],
+            function($acc, $item) {
+                if( !in_array($item->name, ["administrator", "editor", "author", "contributor", "subscriber"])) {
+                    $acc[] = $item;
+                }
+
+                return $acc;
+            },
+            []
+        );
+        return $primary_selection;
+
+        return $primary_selection;
+    }
+
+                /** Possible Datalinks secondary
+                 *
+                 *  The second part of the Add Datalink dialog.
+                 *  Renders optional, secondary information about a datalink, such as taxonomies, post_status, etc
+                 **/
+
+    public function secondary_posts_selection($link_spec) {
+        /**
+         * category, post_tag, format,
+         */
+
+        /** Create forms for the taxonomies **/
+        $taxonomies = $link_spec['taxonomies'];
+
+        foreach($taxonomies as $name => $taxonomy_spec) {
+            if(in_array($name, $this->standard_taxonomies)) {
+                /** Creating the form **/
+//                ob_start();
+                include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary_taxonomy_checkboxes.php");
+//                $html = ob_get_clean();
+//                $link_spec['forms'][] = $html;
+                /** Remove the taxonomy from the spec **/
+                unset($taxonomies[$name]);
+            }
+        }
+
+        $link_spec['taxonomies'] = $taxonomies;
+
+        /** Create form for the post statuses */
+        $post_statuses = $link_spec['post_statuses'];
+//        ob_start();
+        include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary_taxonomy_checkboxes.php");
+//        $html = ob_get_clean();
+//        $link_spec['forms'][] = $html;
+
+
+
+
+        return $link_spec;
 
     }
 
@@ -763,7 +572,6 @@ class Basic_DataFetcher {
     }
 
 
-
     public function post_comment_data($datalink_node, $post_id) {
         global $wpdb;
 
@@ -787,7 +595,6 @@ class Basic_DataFetcher {
         }
         return $datalink_node;
     }
-
     public function user_post_data($datalink_node, $post_id) {
         global $wpdb;
         $sql = "SELECT " . $wpdb->prefix . "users.*  FROM " . $wpdb->prefix . "users, " . $wpdb->prefix . "posts
@@ -811,8 +618,6 @@ class Basic_DataFetcher {
         return $datalink_node;
     }
 
-
-
     /** Example Ids */
 
     public function get_post_example_id($example_id) {
@@ -823,7 +628,6 @@ class Basic_DataFetcher {
 
         return $example_id;
     }
-
     public function get_user_example_id($example_id) {
         global $wpdb;
 
@@ -833,7 +637,6 @@ class Basic_DataFetcher {
         return $example_id;
 
     }
-
     public function get_comment_example_id($example_id) {
         global $wpdb;
 
@@ -843,7 +646,6 @@ class Basic_DataFetcher {
         return $example_id;
 
     }
-
     public function get_taxonomy_example_id($example_id) {
         global $wpdb;
 
@@ -853,10 +655,109 @@ class Basic_DataFetcher {
         return $example_id;
 
     }
+
 }
 
 new Basic_DataFetcher();
 
+/**
+ * Handles all undefined functionalities
+ * Meaning: If the objects aren't featured in standard WordPress or any of the known plugins, we handle it here
+ */
+class Custom_DataFetcher {
+    public function __construct() {
+        add_filter("mc-get_primary_datalink_selection-posts", array($this, 'primary_posts_selection'), 50, 1);
+        add_filter("mc-get_primary_datalink_selection-tax", array($this, 'primary_tax_selection'), 50, 1);
+        add_filter("mc-get_primary_datalink_selection-users", array($this, 'primary_users_selection'), 50, 1);
+
+    }
+
+    /** Possible DataLinks primary **/
+    public function primary_posts_selection($primary_selection) {
+        /** foreach post type, get the ones that are relevant and organize **/
+        if(!isset($primary_selection['posts_custom'])) {
+            $primary_selection['posts_custom'] = array(
+                'display_name' => __("Custom posts", "mailcat"),
+                'selection' => array_reduce(
+                    $primary_selection['post_types'],
+                    function($acc, $item) {
+                        $selection = array(
+                            'data' => array('type' => 'post', 'post_type' => $item->name),
+                            'display_name' => $item->label != false ? $item->label :  ucfirst(implode(" ",explode("_", $item->name)))
+                        );
+
+                        $acc[] = $selection;
+
+                        return $acc;
+                    },
+                    []
+                )
+            );
+        }
+
+
+        unset($primary_selection['post_types']);
+
+        return $primary_selection;
+    }
+    public function primary_tax_selection($primary_selection) {
+        if(!isset($primary_selection['tax_custom'])) {
+            $primary_selection['tax_custom'] = array(
+                'display_name' => __("Custom taxonomies", "mailcat"),
+                'selection' => array_reduce(
+                    $primary_selection['taxonomies'],
+                    function($acc, $item) {
+
+                        $selection = array(
+                            'data' => array('type'=> 'taxonomy', 'taxonomy' => $item->name),
+                            'display_name' => $item->label != false ? $item->label :  ucfirst(implode(" ",explode("_", $item->name)))
+                        );
+
+                        $acc[] = $selection;
+
+                    },
+                    []
+                )
+            );
+        }
+
+        unset($primary_selection['taxonomies']);
+
+        return $primary_selection;
+
+    }
+    public function primary_users_selection($primary_selection) {
+
+        if(!isset($primary_selection['users_custom'])) {
+            $primary_selection['users_custom'] = array(
+                'display_name' => __("Custom users", "mailcat"),
+                'selection' => array_reduce(
+                    $primary_selection['user_types'],
+                    function($acc, $item) {
+
+                        $selection = array(
+                            'data' => array('type'=> 'user', 'role' => $item->name),
+                            'display_name' => ucfirst($item->name)
+                        );
+
+                        $acc[] = $selection;
+
+                        return $acc;
+                    },
+                    []
+                )
+            );
+        }
+
+
+        unset($primary_selection['user_types']);
+
+
+        return $primary_selection;
+    }
+
+}
+new Custom_DataFetcher();
 
 /** For ACF **/
 /**
@@ -883,7 +784,7 @@ class ACF_DataFetcher {
             $fields = acf_get_fields_by_id($field_group['ID']);
             foreach($fields as $field) {
 
-                $value = get_field('bevestiging_nodig_van_champagnehuis', $nl_product_id);
+//                $value = get_field('bevestiging_nodig_van_champagnehuis', $nl_product_id);
 
 
                 $trst = 1;
@@ -894,7 +795,7 @@ class ACF_DataFetcher {
 
 
 }
-new ACF_DataFetcher();
+//new ACF_DataFetcher();
 
 /** For Woocommerce */
 class WC_DataFetcher {
@@ -906,6 +807,184 @@ class WC_DataFetcher {
         add_filter('mc-get_example_id-product', array($this, 'get_product_example_id'), 10, 1 );
         add_filter('mc-get_example_id-shop_order', array($this, 'get_shop_order_example_id'), 10, 1 );
         add_filter('mc-get_example_id-shop_order', array($this, 'get_review_example_id'), 10, 1 );
+
+
+        /** Possible DataLinks primary **/
+        add_filter("mc-get_primary_datalink_selection-posts", array($this, 'primary_posts_selection'), 10, 1);
+        add_filter("mc-get_primary_datalink_selection-tax", array($this, 'primary_tax_selection'), 10, 1);
+        add_filter("mc-get_primary_datalink_selection-users", array($this, 'primary_users_selection'), 10, 1);
+
+
+        /** Possible Datalinks secondary **/
+        add_filter("mc-get_secondary_datalink_selection-posts", array($this, 'secondary_posts_selection'), 10, 1);
+
+    }
+
+
+
+    /** Possible DataLinks **/
+    public function primary_users_selection($primary_selection) {
+
+
+        /** Find the 'Product' and 'Shop Order' post types, add them to the WooCommerce selection remove the post_type from consideration **/
+        if(!isset($primary_selection['woo_users'])) {
+            $primary_selection['woo_users'] = array (
+                'display_name' => __('Woocommerce users', 'mailcat'),
+                'selection' => array()
+
+            );
+        }
+
+        $selection = array_reduce(
+            $primary_selection['user_types'],
+
+            function($acc, $item) {
+
+                if( in_array($item->name, array("shop_manager", "customer") ) ) {
+                    $selection = array(
+                        'data' => array('type' => 'user', 'role' => $item->name),
+                        'display_name' => ucfirst(implode(" ", explode("_", $item->name)))
+                    );
+
+                    $acc[] = $selection;
+                }
+
+                return $acc;
+            },
+
+            []
+        );
+
+        $primary_selection['woo_users']['selection'] = array_merge($primary_selection['woo_users']['selection'], $selection);
+
+
+
+        /** Remove post types if necessary **/
+        $primary_selection['user_types'] = array_reduce(
+            $primary_selection['user_types'],
+            function($acc, $item) {
+                if( !in_array($item->name, array("shop_manager", "customer") ) ) {
+                    $acc[] = $item;
+                }
+
+                return $acc;
+            },
+            []
+        );
+
+
+
+
+
+
+        return $primary_selection;
+    }
+    public function primary_posts_selection($primary_selection ) {
+
+        /** Find the 'Product' and 'Shop Order' post types, add them to the WooCommerce selection remove the post_type from consideration **/
+        if(!isset($primary_selection['woo_posts'])) {
+            $primary_selection['woo_posts'] = array (
+                'display_name' => __('Woocommerce posts', 'mailcat'),
+                'selection' => array()
+
+            );
+        }
+
+        $selection = array_reduce(
+
+            get_terms(array('taxonomy' => 'product_type', 'hide_empty' => false)),
+
+            function($acc, $item) {
+
+                $selection = array(
+                    'data' => array('type' => 'post', 'post_type' => 'product', 'taxonomies' => ['product_type' => [$item->name]]),
+                    'display_name' => "Product (" . $item->name . ")"
+                );
+
+                $acc[] = $selection;
+
+                return $acc;
+            },
+
+            [array('display_name' => 'Shop order', 'data' => array('type' => 'post', 'post_type' => 'shop_order')),
+                array('display_name' => "Product (general)", 'data' => array('type' => 'post', 'post_type' => 'product'))                ]
+        );
+
+        $primary_selection['woo_posts']['selection'] = array_merge($primary_selection['woo_posts']['selection'], $selection);
+
+
+
+        /** Remove post types if necessary **/
+        $primary_selection['post_types'] = array_reduce(
+            $primary_selection['post_types'],
+            function($acc, $item) {
+                if( !in_array($item->name, array('shop_order', 'product') ) ) {
+                    $acc[] = $item;
+                }
+
+                return $acc;
+            },
+            []
+        );
+
+
+
+        return $primary_selection;
+    }
+    public function primary_tax_selection($primary_selection) {
+
+        if(!isset($primary_selection['woo_tax'])) {
+            $primary_selection['woo_tax'] = array(
+                'display_name' => __("Woocommerce taxonomies", "mailcat"),
+
+                'selection' => array()
+            );
+        }
+
+        $selection = array_reduce(
+            $primary_selection['taxonomies'],
+            function($acc, $item) {
+                if(in_array( $item->name, ["product_type", "product_visibility", "product_cat", "product_tag", "product_shipping_class"])) {
+
+                    $selection = array(
+                        'data' => array('type'=> 'taxonomy', 'taxonomy' => $item->name),
+                        'display_name' => $item->label != false ? $item->label :  ucfirst(implode(" ",explode("_", $item->name)))
+                    );
+
+                    $acc[] = $selection;
+                }
+                return $acc;
+
+            },
+            []
+        );
+        $primary_selection['woo_tax']['selection'] = array_merge($primary_selection['woo_tax']['selection'], $selection);
+
+        /** Remove taxonomies if necessary **/
+        $primary_selection['taxonomies'] = array_reduce(
+            $primary_selection['taxonomies'],
+            function($acc, $item) {
+                if( !in_array($item->name, ["product_type", "product_visibility", "product_cat", "product_tag", "product_shipping_class"] ) ) {
+                    $acc[] = $item;
+                }
+
+                return $acc;
+            },
+            []
+        );
+
+
+
+        return $primary_selection;
+    }
+
+
+    public function secondary_posts_selection($link_spec) {
+        /**
+         * product_cat et all,
+         */
+
+        return $link_spec;
 
     }
 
@@ -966,6 +1045,10 @@ class WC_Bookings_DataFetcher {
 
         /** ACF **/
 //        add_filter( 'acf/location/rule_match', array( $this, 'rule_match' ), 50, 3 );
+
+
+        /** Possible DataLinks **/
+        add_filter("mc-get_primary_datalink_selection-posts", array($this, 'primary_posts_selection'), 10, 1);
     }
 
     /** Data **/
@@ -1015,6 +1098,51 @@ class WC_Bookings_DataFetcher {
     }
 
 
+    /** Possible DataLinks **/
+
+    public function primary_posts_selection($primary_selection ) {
+
+        /** Find the 'Bookable Resource' and 'Booking' post types, add them to the WooCommerce selection remove the post_type from consideration **/
+        if(!isset($primary_selection['woo_posts'])) {
+            $primary_selection['woo_posts'] = array(
+                'display_name' => __('Woocommerce posts', 'mailcat'),
+                'selection' => array()
+
+            );
+        }
+
+
+        $selection = array_reduce(
+            $primary_selection['post_types'],
+
+            function($acc, $item) {
+                if( in_array( $item->name, array("bookable_resource", "wc_booking") ) )
+                $acc[] = $item->label;
+                return $acc;
+            },
+
+            []
+        );
+        $primary_selection['woo_posts']['selection'] = array_merge($primary_selection['woo_posts']['selection'], $selection);
+
+
+
+        /** Remove post types if necessary **/
+        $primary_selection['post_types'] = array_reduce(
+            $primary_selection['post_types'],
+            function($acc, $item) {
+                if( !in_array($item->name, array("bookable_resource", "wc_booking") ) ) {
+                    $acc[] = $item;
+                }
+                return $acc;
+            },
+            []
+        );
+
+
+        return $primary_selection;
+    }
+
 
     /** ACF **/
     public function rule_match($match, $rule, $screen)
@@ -1032,7 +1160,7 @@ class WC_Bookings_DataFetcher {
     }
 
 }
-new WC_Bookings_DataFetcher();
+//new WC_Bookings_DataFetcher();
 
 
 

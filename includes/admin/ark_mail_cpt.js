@@ -1900,9 +1900,8 @@ var Ark_Mail_CPT_JS = function() {
 
 
     }
-    // self.get_dataset_by_hierarchy = function(data_ref) {
-    //
-    // }
+
+
 
     self.get_dataset_by_hierarchy = function(datalink, data_ref){
         if(data_ref.length === 0) {
@@ -2212,8 +2211,7 @@ var Ark_Mail_CPT_JS = function() {
                                                                 /** END Errorlog tab **/
 
 
-
-
+                                                                /** DATALINK TAB **/
 
 
 
@@ -2222,21 +2220,55 @@ var Ark_Mail_CPT_JS = function() {
      * Must append the chosen type to the Hierarchy Path
      * Must render the preview of the variable sets
      * **/
-    self.handle_change_add_datalink_type_selector = function(e) {
-        var value = JSON.parse(e.target.value);
-        document.querySelector("#dialog_add_datalink_hierarchy_path #hierarchy_placeholder").innerText = value['link_name'];
+    self.handle_change_primary_selection = function(e) {
 
-        self.view_variable_sets(
-            value['link_type'] ,
-            value['link_name'],
-            "dialog_add_datalink_variable_sets",
-            document.querySelector("#hidden_parent_link_type").value );
+        let selected = e.target.selectedOptions[0];
+        document.querySelector("#dialog_add_datalink_hierarchy_path #hierarchy_placeholder").innerText = selected.innerText;
 
+
+        self.render_secondary_selection_form(selected);
+
+        // self.view_variable_sets(
+        //     value['link_type'] ,
+        //     value['link_name'],
+        //     "dialog_add_datalink_variable_sets",
+        //     document.querySelector("#hidden_parent_link_type").value );
+
+    }
+
+    self.render_secondary_selection_form = function(selected_primary) {
+        let data = {
+            'action' : 'render_secondary_selection_form',
+            'link_type' : selected_primary.value,
+            'link_spec' : {}
+        };
+
+        for(key in selected_primary.dataset) {
+            if(key === "taxnomies") {
+                data['link_spec'][key] = JSON.parse(selected_primary.dataset[key]);
+            }
+            else {
+                data['link_spec'][key] = selected_primary.dataset[key];
+            }
+        }
+
+        jQuery.ajax({
+            url: ark_mail_cpt_config.ajax_url,
+            type: 'POST',
+            method: 'POST',
+            cache: false,
+            data: data,
+            success : function(response) {
+                document.querySelector("#dialog_add_datalink_secondary_container").innerHTML = response.data.html;
+                console.log(response);
+            }
+        });
     }
 
     self.change_delegation = function(e) {
         if(e.target.id === "dialog_add_datalink_type_selector") {
-            self.handle_change_add_datalink_type_selector(e)
+            /** The type selector is the primary selection input. From this, we get the secondary selection inputs **/
+            self.handle_change_primary_selection(e)
         }
     }
 
@@ -2278,35 +2310,12 @@ var Ark_Mail_CPT_JS = function() {
         }
 
         else if(e.target.classList.contains("datalink_btn_add")) {
-            var path = [];
-            var datalink_row = e.target.closest(".datalink_row");
-            if(datalink_row !== null) {
-                self.get_datalink_hierarchy_path(path, e.target.closest(".datalink_row"));
-            }
-
-            var add_dialog_hierarchy_path = document.querySelector("#dialog_add_datalink_hierarchy_path");
-            add_dialog_hierarchy_path.innerHTML = "";
-
-            path.forEach(function(link_name) {
-                var node = document.createElement("div");
-                node.innerText = link_name;
-                add_dialog_hierarchy_path.append(node)
-            });
-
-            //Add a placeholder node, for the link type that will be chosen by the user in the dialog
-            var placeholder_node = document.createElement( "div");
-            placeholder_node.id = "hierarchy_placeholder";
-            placeholder_node.innerText = "__";
-            add_dialog_hierarchy_path.append(placeholder_node)
-
-
-            //Add the parent's link_type of the current datalink_row to the hidden input's value
-            document.querySelector("#hidden_parent_link_type").value = datalink_row.dataset.link_type;
-
-            //Add an input to the hierarchy dialog for each path element in the hierarchy
-            self.get_possible_datalinks(datalink_row);
+            self.setup_add_datalink_dialog(e);
         }
 
+        else if (e.target.classList.contains("new_root_datalink")) {
+            self.setup_add_datalink_dialog(e);
+        }
         else if(e.target.classList.contains("submit_new_hierarchy")) {
             var path = [];
             document.querySelectorAll("#dialog_add_datalink_hierarchy_path div:not(:last-child)").forEach(function(node) {
@@ -2340,6 +2349,38 @@ var Ark_Mail_CPT_JS = function() {
     }
 
 
+    self.setup_add_datalink_dialog = function(e) {
+        var path = [];
+        var datalink_row = e.target.closest(".datalink_row");
+        if(datalink_row !== null) {
+            self.get_datalink_hierarchy_path(path, e.target.closest(".datalink_row"));
+
+            //Add the parent's link_type of the current datalink_row to the hidden input's value
+            document.querySelector("#hidden_parent_link_type").value = datalink_row.dataset.link_type;
+        }
+
+        var add_dialog_hierarchy_path = document.querySelector("#dialog_add_datalink_hierarchy_path");
+        add_dialog_hierarchy_path.innerHTML = "";
+
+        path.forEach(function(link_name) {
+            var node = document.createElement("div");
+            node.innerText = link_name;
+            add_dialog_hierarchy_path.append(node)
+        });
+
+        //Add a placeholder node, for the link type that will be chosen by the user in the dialog
+        var placeholder_node = document.createElement( "div");
+        placeholder_node.id = "hierarchy_placeholder";
+        placeholder_node.innerText = "__";
+        add_dialog_hierarchy_path.append(placeholder_node)
+
+
+
+
+        //Add an input to the hierarchy dialog for each path element in the hierarchy
+        self.get_possible_datalinks(datalink_row);
+    }
+
     /** For any part in the hierarchy, we must determine which links are possible to be made. **/
     self.get_possible_datalinks = function(datalink_row) {
 
@@ -2354,7 +2395,7 @@ var Ark_Mail_CPT_JS = function() {
         data['mail_id'] = ark_mail_cpt_config.mail_id;
         data['link_name'] = link_name;
         data['link_type'] = link_type;
-        data['action'] = "get_possible_datalinks";
+        data['action'] = "render_primary_datalink_form";
 
         jQuery.ajax({
             url: ark_mail_cpt_config.ajax_url,
@@ -2368,7 +2409,7 @@ var Ark_Mail_CPT_JS = function() {
                 var temp = document.createElement("div");
                 temp.innerHTML = response.data.html;
 
-                document.querySelector("#dialog_add_datalink_type_selector").replaceWith(temp.firstElementChild);
+                document.querySelector("#dialog_add_datalink_primary").innerHTML = response.data.html;
             }
         });
     }
@@ -2500,7 +2541,6 @@ var Ark_Mail_CPT_JS = function() {
         var to_many = [];
 
     }
-
 
 
 
@@ -2870,6 +2910,8 @@ var Ark_Mail_CPT_JS = function() {
     }
 
 
+
+                                            /** END DATALINK TAB **/
     /** Variable suggestions **/
 
     self.var_suggestion_autocomplete_source = function(request, response) {
