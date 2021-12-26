@@ -11,7 +11,7 @@
     <div class="form_inputs_checkboxes">
         <?php foreach($values as $value): ?>
             <div>
-                <input type="radio"  name="<?php echo $name; ?>" value="<?php echo $value; ?>"/>
+                <input type="radio"  name="link_spec[<?php echo $name; ?>]" value="<?php echo $value; ?>"/>
                 <label><?php echo $value; ?></label>
             </div>
         <?php endforeach; ?>

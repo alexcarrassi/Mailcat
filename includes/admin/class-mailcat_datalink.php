@@ -8,16 +8,16 @@ include_once (ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/fetchers/class-mailcat_wc_
 
 class Ark_DataLink {
     public int $ID = 0;
-    public int $db_id = 0;
-    public string $type;
-    public string $name;
-    public string $desc;
-    public bool $many = false;
-    public $parent    = null;
-    public $links     = array();
-    public $var_forms = array();
-    public $data      = array();
-    public $link_spec = array();
+    public int $db_id = 0;          //ID of associated object in Database / Datastore
+    public string $type;            //Link type. Ex: 'post', 'taxonomy', 'user', 'custom'
+    public string $name;            //Name of the link. Ex: 'wc_booking_2',
+    public string $desc;            //User submitted description
+    public bool $many = false;      //Does parent hold Many of this datalink?
+    public $parent    = null;       //Parent DataLink
+    public $links     = array();    //Children Datalinks
+    public $var_forms = array();    //Variable Formatting
+    public $data      = array();    //Data container (contains actual values)
+    public $link_spec = array();    //Link specification, such as Taxonomies, terms, etc
 
     public function __construct($data) {
         if(!isset($data['type'])) {
@@ -86,7 +86,6 @@ class Ark_DataLink {
 
     public function &get_child_by_path($hierarchy_path, $single = false) {
         if(count($hierarchy_path) < 1) {
-
             return $this;
         }
 

@@ -2237,26 +2237,27 @@ var Ark_Mail_CPT_JS = function() {
     }
 
     /**
-     * User changed one of the secondary forms, meaning we need to get the example dataset all over again
-     * @param e
+     * User changed one of the secondary forms, meaning we need to rerender the dataset
+     * @param e - The change event, unused
      */
     self.handle_secondary_selection = function(e) {
-        /** Get all data from the form **/
-        let form1 = document.querySelector('#dialog_add_datalink');
-        let formData = new FormData(form1);
 
-        /** There is a .dataset in the primary selection options, we need to manually fetch taht **/
+        /** Get all data from the form This takes care of the secondary forms **/
+        let form = document.querySelector('#dialog_add_datalink');
+        let formData = new FormData(form);
+
+        /** There is a .dataset in the primary selection options, we need to manually fetch that **/
         let selected_primary = document.querySelector("#dialog_add_datalink_type_selector").selectedOptions[0];
-
         for(key in selected_primary.dataset) {
-            if(key === "taxonomies") {
-                formData.append(key, JSON.parse(selected_primary.dataset[key]))
-            }
-            else {
-                formData.append(key, selected_primary.dataset[key])
-            }
+            formData.append('link_spec[' + key + ']', selected_primary.dataset[key]);
         }
 
+        /** Finally, we need to get the current hierarchy path **/
+        let hierarchy_path = [];
+        document.querySelectorAll("#dialog_add_datalink_hierarchy_path div:not(:last-child)").forEach(function(node) {
+            hierarchy_path.push(node.innerText);
+        })
+        formData.append('hierarchy_path', hierarchy_path);
 
         for (let [key, value] of formData.entries()) {
             console.log(key + " = " +  value);
@@ -2264,6 +2265,41 @@ var Ark_Mail_CPT_JS = function() {
 
         /** Render the new variable set **/
 
+        self.render_dataset(formData, "dialog_add_datalink_variable_sets", false);
+    }
+
+
+    /**
+     *
+     * @param formData          formData is a FormData object containing the link_type and link_spec
+     * @param view_id           view_id is the id of the HTML element in which we want to render our result
+     * @param show_formatting   boolean indicating whether we want to render the user-saved variable formatting
+     */
+    self.render_dataset = function(formData, view_id, show_formatting) {
+
+        formData.append('action', 'render_dataset');
+        formData.append('show_formatting', show_formatting )
+        formData.append('mail_id', ark_mail_cpt_config.mail_id);
+
+
+        // for (let [key, value] of link_spec.entries()) {
+        //     data[key]  =   value;
+        // }
+        // console.log(data)
+
+        jQuery.ajax({
+            url: ark_mail_cpt_config.ajax_url,
+            type: 'POST',
+            method: 'POST',
+            cache: false,
+
+            data: formData ,
+            contentType: false,
+            processData: false,
+            success : function(response) {
+                document.querySelector("#" + view_id).innerHTML = response.data.html;
+            }
+        });
     }
 
 
@@ -2529,6 +2565,7 @@ var Ark_Mail_CPT_JS = function() {
         }
 
         self.get_datalink_hierarchy_path(hierarchy_path, self.get_datalink_parent(datalink_row));
+
 
         hierarchy_path.push(datalink_row.dataset.id);
     }

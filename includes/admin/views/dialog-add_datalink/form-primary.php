@@ -8,7 +8,7 @@
 <div id="dialog_add_datalink_inputs">
     <div>
         <label for="dialog_add_datalink_type_selector">Link type </label>
-        <select id="dialog_add_datalink_type_selector" name="primary_selection">
+        <select id="dialog_add_datalink_type_selector" name="link_type">
             <?php foreach($possible_link_types as $parent_type => $optgroup_parenttype) :?>
                 <optgroup label="<?php echo $parent_type; ?>" class="parenttype">
 

@@ -32,6 +32,9 @@ class Mail_CPT_AJAX {
         add_action("wp_ajax_get_example_variable_set", array($this,"get_variable_set"));
         add_action("wp_ajax_nopriv_get_example_variable_set", array($this,"get_variable_set"));
 
+        add_action("wp_ajax_render_dataset", array($this, "render_dataset"));
+        add_action("wp_ajax_nopriv_render_dataset", array($this,"render_dataset"));
+
 
         add_action("wp_ajax_mailcat_rectify_id_error", array($this,"mailcat_rectify_id_error"));
         add_action("wp_ajax_nopriv_mailcat_rectify_id_error", array($this,"mailcat_rectify_id_error"));
@@ -42,15 +45,41 @@ class Mail_CPT_AJAX {
         }
     }
 
+
+    /**
+     * expected parameters
+     *
+     *   mail_id
+     *   link_type
+     *   hierarchy_path
+     *   show_formatting
+     *   link_spec
+     */
+
+    function render_dataset() {
+        $test = 1;
+        /** Try to get datalink by hierarchy path **/
+        $datalink = $this->datalinks->get_child_by_path($_REQUEST['hierarchy_path']);
+        if($datalink == null) {
+
+            $datalink = new Ark_DataLink(
+                array(
+                    'type' => $_REQUEST['link_type'],
+                    'link_spec' => $_REQUEST['link_spec']
+            ));
+
+        }
+
+        $test = 1;
+
+
+    }
+
     function render_variable_set() {
 
         $link_name = $_REQUEST['link_name'];
 
-        /** Get configured formats **/
-        $datalink = isset($_REQUEST['hierarchy_path']) ?
-            $this->datalinks->get_child_by_path($_REQUEST['hierarchy_path'])
-            :
-            new Ark_DataLink(array('name' => $_REQUEST['link_name'], 'type' => $_REQUEST['link_type']));
+
 
         $datalink->get_example_id();
         $datalink->get_variable_sets();
