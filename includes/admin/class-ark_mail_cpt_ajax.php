@@ -36,17 +36,11 @@ class Mail_CPT_AJAX {
         add_action("wp_ajax_mailcat_rectify_id_error", array($this,"mailcat_rectify_id_error"));
         add_action("wp_ajax_nopriv_mailcat_rectify_id_error", array($this,"mailcat_rectify_id_error"));
 
-
-
-
-
-
         if(isset($_REQUEST['mail_id'])) {
             $this->mail_id = $_REQUEST['mail_id'];
             $this->datalinks = get_post_meta($this->mail_id , 'datalink', true);
         }
     }
-
 
     function render_variable_set() {
 
@@ -66,39 +60,44 @@ class Mail_CPT_AJAX {
         wp_send_json_success(array('html' => ob_get_clean()));
     }
 
-
     function render_primary_datalink_form() {
-        $datalink_object = array(
-            "link_name"=> $_REQUEST['link_name'],
-            "link_type" => $_REQUEST['link_type']
-        );
-        $possible_link_types = DataLink_Utils::get_all_possible_children($datalink_object);
 
+        $datalink = new Ark_DataLink(array('name' => $_REQUEST['link_name'], 'type' => $_REQUEST['link_type']));
+
+        /** Get the possible links types and render the primary selection form **/
+        $possible_link_types = DataLink_Utils::get_all_possible_children($datalink);
         ob_start();
         include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-primary.php");
+        $form_primary = ob_get_clean();
+
+        /** Get the variable sets and render them */
+        $datalink->get_variable_sets();
+
         wp_send_json_success(array(
-            'html' => ob_get_clean()
+            'html_form_primary' => $form_primary
         ));
     }
 
     function render_secondary_selection_form() {
         /** Preprocess  **/
-
         $link_spec = array(
             'link_type' => $_REQUEST['link_type'],
             'link_spec' => $_REQUEST['link_spec']
         );
+        /** Get the variable sets and render them */
+
+        $datalink = new Ark_DataLink(array('type' => $_REQUEST['link_type'], 'link_spec' => $_REQUEST['link_spec']));
+        $datalink->get_example_id();
+        $datalink->get_variable_sets();
 
         ob_start();
-        $forms = DataLink_Utils::get_secondary_children_forms($link_spec);
+        DataLink_Utils::get_secondary_children_forms($link_spec);
 
         wp_send_json_success(array(
             'html' => ob_get_clean()
         ));
         $test = 1;
     }
-
-
 
     function delete_datalink() {
         /** Delete the datalink by hierarchy **/
@@ -117,7 +116,6 @@ class Mail_CPT_AJAX {
         wp_send_json_success(array('html'=> ob_get_clean(), 'datalinks' => $this->datalinks));
 
     }
-
 
     /** Add a datalink to an Ark_Mail, and return the new DataLink UI Element **/
     function add_DataLink() {
@@ -145,14 +143,12 @@ class Mail_CPT_AJAX {
         wp_send_json_success(array('html'=> ob_get_clean(), 'datalinks' => $this->datalinks));
     }
 
-
     function save_format_list() {
         $datalink = $this->datalinks->get_child_by_path($_REQUEST['hierarchy_path']);
         $datalink->set_var_format($_REQUEST['set_name'], $_REQUEST['var_name'], $_REQUEST['function_data']);
 
         update_post_meta($this->mail_id, 'datalink', $this->datalinks);
     }
-
 
     function save_mail_template() {
 
@@ -169,9 +165,6 @@ class Mail_CPT_AJAX {
             )
         );
     }
-
-
-
 
     function direct_mail() {
 
@@ -197,7 +190,6 @@ class Mail_CPT_AJAX {
             ));
         }
     }
-
 
     /** User wants to rectify ID errors by manually sending some emails **/
     function mailcat_rectify_id_error() {

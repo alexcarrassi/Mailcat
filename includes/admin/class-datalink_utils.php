@@ -95,8 +95,25 @@ class DataLink_Utils {
             $primary_posts_selection = apply_filters("mc-get_primary_datalink_selection-posts", array('post_types' => self::get_post_types()));
             $primary_tax_selection = apply_filters("mc-get_primary_datalink_selection-tax",     array('taxonomies' => self::get_taxonomies()));
             $primary_user_selection = apply_filters("mc-get_primary_datalink_selection-users",  array('user_types' => self::get_user_types()));
+            $primary_custom_tables = apply_filters("mc-get_primary_custom_tables",  array());
 
-            $possible_links = array_merge($primary_posts_selection, $primary_tax_selection, $primary_user_selection);
+
+            $possible_links = array(
+                'Posts' => $primary_posts_selection,
+                'Taxonomies' => $primary_tax_selection,
+                'Users' => $primary_user_selection,
+                'Miscellaneous' => array(
+                    array(
+                        'display_name' => __('Page', 'mailcat'),
+                         'data' => array (
+                             'type' => 'post',
+                             'post_type' => 'page'
+                         )
+                    )
+                ),
+            );
+
+
 
         }
         else {
@@ -153,7 +170,7 @@ class DataLink_Utils {
         return $possible_links;
     }
 
-    private static function get_tax_and_terms($post_type = null) {
+    private static function get_post_tax_and_terms($post_type = null) {
         $result = array();
         $taxonomies = get_object_taxonomies($post_type, 'objects');
         foreach($taxonomies as $key => $taxonomy) {
@@ -161,12 +178,22 @@ class DataLink_Utils {
                 $result[$key] = array(
                     'display_name' => isset($taxonomy->label) ? $taxonomy->label : ucfirst($taxonomy->name),
                     'taxonomy' => $taxonomy->name,
-                    'terms' => get_terms(array('taxonomy' => $key, 'hide_empty' => false))
+                    'terms' => get_terms(array('taxonomy' => $taxonomy->name, 'hide_empty' => false))
                 );
             }
         }
 
         return $result;
+    }
+
+    private static function get_tax_terms($taxonomy) {
+        $taxonomy = get_taxonomy($taxonomy);
+
+        return array (
+            'display_name' => isset($taxonomy->label) ? $taxonomy->label : ucfirst($taxonomy->name),
+            'taxonomy' => $taxonomy->name,
+            'terms' => get_terms(array('taxonomy' => $taxonomy->name, 'hide_empty' => false))
+        );
     }
 
     public static function get_secondary_children_forms($link_spec) {
@@ -175,13 +202,16 @@ class DataLink_Utils {
         switch($link_spec['link_type']) {
             case 'post':
                 $forms = apply_filters("mc-get_secondary_datalink_selection-posts", array(
+                    'post_type' => $link_spec['link_spec']['post_type'],
                     'forms' => array(),
                     'post_statuses' => array_values( get_post_stati() ),
-                    'taxonomies' => self::get_tax_and_terms($link_spec['link_spec']['post_type'])
+                    'taxonomies' => self::get_post_tax_and_terms($link_spec['link_spec']['post_type'])
                 ));
                 break;
             case 'taxonomy':
-                apply_filters("mc-get_secondary_datalink_selection-tax", array());
+                $forms = apply_filters("mc-get_secondary_datalink_selection-tax",
+                        self::get_tax_terms($link_spec['link_spec']['taxonomy'])
+                    );
                 break;
             case 'user':
                 apply_filters("mc-get_secondary_datalink_selection-users", array());
@@ -198,7 +228,7 @@ class DataLink_Utils {
 //        $primary_posts_selection = apply_filters("mc-get_primary_datalink_selection-posts", array('post_types' => self::get_post_types()));
 
 
-        return $forms['forms'];
+//        return $forms['forms'];
     }
 
     public static function is_many($child, $parent) {
@@ -239,14 +269,6 @@ class DataLink_Utils {
 
         return false;
 
-    }
-
-    public static function get_available_link_types() {
-        global $wpdb;
-
-        $sql = "SELECT DISTINCT post_type as link_name, 'post' as link_type FROM " . $wpdb->prefix . "posts";
-
-        return $wpdb->get_results($sql, ARRAY_A);
     }
 
     /** Get all the variable sets belonging to a link name
@@ -428,5 +450,23 @@ class DataLink_Utils {
             throw new Exception("Nothing found for ID", 1);
         }
         return get_object_vars($object);
+    }
+
+    public static function get_name_from_spec($type, $link_spec) {
+
+        switch($type) {
+            case 'post':
+                return $link_spec['post_type'];
+            case 'taxonomy':
+                return $link_spec['taxonomy'];
+            case 'user':
+                throw new Exception("Nothing yet for user");
+            case 'comment':
+                throw new Exception("Nothing yet for comment");
+            case 'page':
+                throw new Exception("Nothing yet for page");
+            default:
+                break;
+        }
     }
 }

@@ -29,9 +29,9 @@ class Ark_Mail_CPT {
                 add_action('add_meta_boxes', array($this, 'add_direct_mail_metabox'));
                 add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
                 add_filter('get_grapes_blocks', array($this, 'default_grapes_blocks'));
+
             }
         }
-
     }
 
     public function enqueue_scripts() {
@@ -244,13 +244,60 @@ class Ark_Mail_CPT {
     }
 
     public function output_DataLink_metabox() {
-        $link_types = DataLink_Utils::get_available_link_types();
-        $possible_link_types = DataLink_Utils::get_all_possible_children(null);
-
-        $datalink = $this->datalinks;
-
         include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/mail_composer_main_view.php");
+        add_action("admin_footer", array($this, "output_datalink_dialog_container"));
+
     }
+
+    public function output_datalink_dialog_container() {
+        $test = 1;
+        ?>
+
+
+        <div id="dialog_add_datalink_" style="display:none">
+            <input type="hidden" id="hidden_parent_link_type" />
+            <form id="dialog_add_datalink">
+                <div id="dialog_add_datalink_header">
+                    <div>
+                        Add Datalink
+                    </div>
+                </div>
+
+                <div id="dialog_add_datalink_hierarchy_path">
+                    <div id="hierarchy_placeholder">
+                        hierarchy path
+                    </div>
+                </div>
+
+                <div id="dialog_add_datalink_body">
+                    <div id="dialog_add_datalink_primary">
+                        <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-primary.php"); ?>
+                    </div>
+
+
+                    <div id="dialog_add_datalink_secondary">
+                        <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary.php"); ?>
+                    </div>
+
+                    <div id="variable_sets">
+                        <h2>Variable sets</h2>
+                        <div id="dialog_add_datalink_variable_sets">
+
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dialog_add_datalink_footer">
+                    <button type="button" class="submit_new_hierarchy button button-primary button-large">
+                        Submit new hierarchy
+                    </button>
+                </div>
+            </form>
+        </div>
+
+            <?php
+    }
+
 
     public function output_direct_mail_metabox() {
         ?>

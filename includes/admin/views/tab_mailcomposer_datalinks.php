@@ -72,46 +72,6 @@
 
     </style>
 
-    <div id="dialog_add_datalink_" style="display:none">
-        <input type="hidden" id="hidden_parent_link_type" />
-        <div id="dialog_add_datalink">
-            <div id="dialog_add_datalink_header">
-                <div>
-                    Add Datalink
-                </div>
-            </div>
-
-            <div id="dialog_add_datalink_hierarchy_path">
-                <div id="hierarchy_placeholder">
-                    hierarchy path
-                </div>
-            </div>
-
-            <div id="dialog_add_datalink_body">
-                <div id="dialog_add_datalink_primary">
-                    <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-primary.php"); ?>
-                </div>
-
-
-                <div id="dialog_add_datalink_secondary">
-                    <?php include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary.php"); ?>
-                </div>
-
-                <div id="variable_sets">
-                    <h2>Variable sets</h2>
-                    <div id="dialog_add_datalink_variable_sets">
-
-                    </div>
-                </div>
-            </div>
-
-            <div id="dialog_add_datalink_footer">
-                <button type="button" class="submit_new_hierarchy button button-primary button-large">
-                    Submit new hierarchy
-                </button>
-            </div>
-        </div>
-    </div>
 </div>
 
 

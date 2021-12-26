@@ -1166,7 +1166,7 @@ li.cat_li{
 }
 
 #TB_window {
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 #dialog_add_datalink_secondary_container {
@@ -1250,4 +1250,26 @@ li.cat_li{
     visibility: visible;
     opacity: 1;
     cursor:pointer;
+}
+
+
+input[type=checkbox], input[type=radio] {
+    height: 1rem !important;
+    width: 1rem !important;
+}
+
+optgroup.parenttype {
+    font-size: 1.2rem;
+}
+
+optgroup.subtype {
+    font-weight: 500;
+}
+
+#dialog_add_datalink_type_selector option {
+    font-weight: 100;
+}
+
+.option_misc {
+    font-size: 0.9rem;
 }

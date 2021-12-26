@@ -2236,6 +2236,37 @@ var Ark_Mail_CPT_JS = function() {
 
     }
 
+    /**
+     * User changed one of the secondary forms, meaning we need to get the example dataset all over again
+     * @param e
+     */
+    self.handle_secondary_selection = function(e) {
+        /** Get all data from the form **/
+        let form1 = document.querySelector('#dialog_add_datalink');
+        let formData = new FormData(form1);
+
+        /** There is a .dataset in the primary selection options, we need to manually fetch taht **/
+        let selected_primary = document.querySelector("#dialog_add_datalink_type_selector").selectedOptions[0];
+
+        for(key in selected_primary.dataset) {
+            if(key === "taxonomies") {
+                formData.append(key, JSON.parse(selected_primary.dataset[key]))
+            }
+            else {
+                formData.append(key, selected_primary.dataset[key])
+            }
+        }
+
+
+        for (let [key, value] of formData.entries()) {
+            console.log(key + " = " +  value);
+        }
+
+        /** Render the new variable set **/
+
+    }
+
+
     self.render_secondary_selection_form = function(selected_primary) {
         let data = {
             'action' : 'render_secondary_selection_form',
@@ -2244,7 +2275,7 @@ var Ark_Mail_CPT_JS = function() {
         };
 
         for(key in selected_primary.dataset) {
-            if(key === "taxnomies") {
+            if(key === "taxonomies") {
                 data['link_spec'][key] = JSON.parse(selected_primary.dataset[key]);
             }
             else {
@@ -2268,7 +2299,11 @@ var Ark_Mail_CPT_JS = function() {
     self.change_delegation = function(e) {
         if(e.target.id === "dialog_add_datalink_type_selector") {
             /** The type selector is the primary selection input. From this, we get the secondary selection inputs **/
-            self.handle_change_primary_selection(e)
+            self.handle_change_primary_selection(e);
+        }
+
+        else {
+            self.handle_secondary_selection(e);
         }
     }
 
@@ -2406,10 +2441,12 @@ var Ark_Mail_CPT_JS = function() {
             success : function(response) {
 
                 /** Rerender the select element **/
-                var temp = document.createElement("div");
-                temp.innerHTML = response.data.html;
+                // var temp = document.createElement("div");
+                // console.log(response.data);
+                // console.log(response.data.html_form_primary);
+                // temp.innerHTML = response.data.html_form_primary;
 
-                document.querySelector("#dialog_add_datalink_primary").innerHTML = response.data.html;
+                document.querySelector("#dialog_add_datalink_primary").innerHTML = response.data.html_form_primary;
             }
         });
     }
@@ -3319,3 +3356,4 @@ document.addEventListener("DOMContentLoaded", function(e) {
 
     CKEDITOR.dtd.$editable['a'] = 1;
 });
+
