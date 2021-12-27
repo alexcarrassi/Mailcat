@@ -70,6 +70,9 @@ class Mail_CPT_AJAX {
 
         }
 
+        $datalink->get_example_id();
+        $datalink->get_variable_sets();
+
         $test = 1;
 
 
@@ -81,7 +84,6 @@ class Mail_CPT_AJAX {
 
 
 
-        $datalink->get_example_id();
         $datalink->get_variable_sets();
 
         ob_start();

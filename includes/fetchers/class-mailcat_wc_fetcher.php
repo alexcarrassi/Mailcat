@@ -195,42 +195,28 @@ class WC_DataFetcher {
 
         $taxonomies = $link_spec['taxonomies'];
 
-
-        //
-//        $selection = array_reduce(
-//
-//            get_terms(array('taxonomy' => 'product_type', 'hide_empty' => false)),
-//
-//            function($acc, $item) {
-//
-//                $selection = array(
-//                    'data' => array('type' => 'post', 'post_type' => 'product', 'taxonomies' => ['product_type' => [$item->name]]),
-//                    'display_name' => "Product (" . $item->name . ")"
-//                );
-//
-//                $acc[] = $selection;
-//
-//                return $acc;
-//            },
-//
-//            [array('display_name' => 'Shop order', 'data' => array('type' => 'post', 'post_type' => 'shop_order')),
-//                array('display_name' => "Product (general)", 'data' => array('type' => 'post', 'post_type' => 'product'))                ]
-//        );
-//
-//
-
-
-
         foreach($taxonomies as $name => $taxonomy_spec) {
             if(in_array($name, $this->standard_taxonomies) && !empty($taxonomy_spec['terms'])) {
                     /** Creating the form **/
-                    if($name == 'product_type') {
+                $name = str_replace("product_", "", $name);
+                    if($name == 'type') {
                         /** Product types require radios */
                         $header = "Product type";
                         $values = array_map(function($item){return $item->slug; }, $taxonomy_spec['terms']);
+                        $name = "type";
                         include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary_radios.php");
                     }
-                    else {
+
+                    elseif($name == "visibility") {
+                        /** Visibility types requires radios */
+                        $header = "Product visibility";
+                        $values = array_map(function($item){return $item->slug; }, $taxonomy_spec['terms']);
+                        include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary_radios.php");
+                    }
+                    elseif($name == "cat") {
+
+                        /** Creating the form **/
+                        $name = "[category]";
 
                         include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary_taxonomy_checkboxes.php");
 
@@ -266,40 +252,20 @@ class WC_DataFetcher {
     /** Example Ids **/
     public function get_product_example_id($datalink_node, $example_id) {
 
+        $args = array('return' => 'ids');
+        $link_spec = $datalink_node->link_spec;
 
-//
-//            $args = wp_parse_args( $args, array(
-//                'status' => array( 'draft', 'pending', 'private', 'publish' ),
-//                'type' => array_merge( array_keys( wc_get_product_types() ) ),
-//                'parent' => null,
-//                'sku' => '',
-//                'category' => array(),
-//                'tag' => array(),
-//                'limit' => get_option( 'posts_per_page' ),
-//                'offset' => null,
-//                'page' => 1,
-//                'include' => array(),
-//                'exclude' => array(),
-//                'orderby' => 'date',
-//                'order' => 'DESC',
-//                'return' => 'objects',
-//                'paginate' => false,
-//                'shipping_class' => array(),
-//            ) );
-//
-        $product_type = isset($link_spec['product_type']) ? $link_spec['product_type'] : null;
+        foreach($link_spec as $name => $value) {
+            $name = $name == 'post_status' ? str_replace("post_", "", $name) : $name;
+            $args[$name]  = $value;
+        }
+        $ids = wc_get_products($args);
 
-//        if($product_type) {
-//            switch($link)
-//        }
-
-        $test = new WC_Product();
-        global $wpdb;
-
-        $sql = "SELECT ID FROM " . $wpdb->prefix . "posts WHERE post_type = %s ORDER BY RAND() LIMIT 1";
-        $example_id =  $wpdb->get_var($wpdb->prepare($sql, array("product")));
-
-        return $example_id;
+        if(count($ids) > 0) {
+            $random_index = array_rand($ids);
+            return $ids[$random_index];
+        }
+        return 0;
     }
     public function get_shop_order_example_id($example_id) {
         global $wpdb;

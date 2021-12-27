@@ -12,7 +12,7 @@ $test = 1;
     <div class="form_inputs_checkboxes">
         <?php foreach($taxonomy_spec['terms'] as $term): ?>
             <div>
-                <input id="checkbox_tax<?php echo $term->name; ?>" type="checkbox"  name="link_spec[taxonomy:<?php echo $taxonomy_spec['taxonomy']; ?>][]" value="<?php echo $term->slug; ?>"/>
+                <input id="checkbox_tax<?php echo $term->name; ?>" type="checkbox"  name="link_spec<?php echo $name ?>[]" value="<?php echo $term->slug; ?>"/>
                 <label for="checkbox_tax<?php echo $term->name; ?>" ><?php echo $term->name; ?></label>
             </div>
         <?php endforeach; ?>

@@ -199,10 +199,8 @@ class Standard_DataFetcher {
             foreach($taxonomies as $name => $taxonomy_spec) {
                 if(in_array($name, $this->standard_taxonomies) && !empty($taxonomy_spec['terms'])) {
                     /** Creating the form **/
-//                ob_start();
+                    $name = "[taxonomies][$name]";
                     include(ARK_MAIL_COMPOSER_ROOT_DIR . "/includes/admin/views/dialog-add_datalink/form-secondary_taxonomy_checkboxes.php");
-//                $html = ob_get_clean();
-//                $link_spec['forms'][] = $html;
                     /** Remove the taxonomy from the spec **/
                     unset($taxonomies[$name]);
                 }
@@ -383,20 +381,38 @@ class Standard_DataFetcher {
     /** Example Ids */
 
     public function get_post_example_id($datalink_node, $example_id) {
+        $args = array('fields' => 'ids'); //We only want ids.
 
+        $link_spec = $datalink_node->link_spec;
+        /** First, we dissect the taxonomies **/
 
-        global $wpdb;
+        if(isset($link_spec['taxonomies'])) {
+            $tax_query = array();
+            foreach($link_spec['taxonomies'] as $tax_name => $tax_terms) {
+                array_push($tax_query, array (
+                    'taxonomy' => $tax_name,
+                    'field' => 'slug',
+                    'terms' => $tax_terms
+                ));
+            }
+            $args['tax_query'] = $tax_query;
 
-        $sql = "SELECT ID FROM " . $wpdb->prefix . "posts ORDER BY RAND() LIMIT 1";
-        $example_id = $wpdb->get_var($sql);
+            unset($link_spec['taxonomies']);
+        }
 
+        /** Now we do the rest **/
+        foreach($link_spec as $key => $value) {
+            $args[$key] = $value;
+        }
+        $ids = get_posts($args);
 
-
-
-        get_posts(array('post_type' => 'product'));
-
-        return $example_id;
+        if(count($ids) > 0) {
+            $random_index = array_rand($ids);
+            return $ids[$random_index];
+        }
+        return 0;
     }
+
     public function get_user_example_id($datalink_node, $example_id) {
         global $wpdb;
 

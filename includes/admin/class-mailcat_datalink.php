@@ -239,7 +239,7 @@ class Ark_DataLink {
     public function get_example_id() {
         $example_id = 0;
         $example_id = apply_filters("mc-get_example_id-" . $this->name, $this, $example_id);
-        if($example_id == 0) {
+        if(!is_numeric($example_id) || $example_id == 0) {
             $example_id = apply_filters("mc-get_example_id-" . $this->type, $this, $example_id);
         }
 
