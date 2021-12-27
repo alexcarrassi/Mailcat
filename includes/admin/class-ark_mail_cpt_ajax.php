@@ -119,13 +119,16 @@ class Mail_CPT_AJAX {
 
         $datalink = new Ark_DataLink(array('type' => $_REQUEST['link_type'], 'link_spec' => $_REQUEST['link_spec']));
         $datalink->get_example_id();
-        $datalink->get_variable_sets();
 
         ob_start();
         DataLink_Utils::get_secondary_children_forms($link_spec);
 
+        $secondary_forms = ob_get_clean();
+
+        $datalink->get_variable_sets();
+
         wp_send_json_success(array(
-            'html' => ob_get_clean()
+            'html' => $secondary_forms
         ));
         $test = 1;
     }

@@ -12,7 +12,7 @@ class WC_DataFetcher {
         /** Example Ids */
         add_filter('mc-get_example_id-product', array($this, 'get_product_example_id'), 10, 2 );
         add_filter('mc-get_example_id-shop_order', array($this, 'get_shop_order_example_id'), 10, 2 );
-        add_filter('mc-get_example_id-shop_order', array($this, 'get_review_example_id'), 10, 2 );
+//        add_filter('mc-get_example_id-shop_order', array($this, 'get_review_example_id'), 10, 2 );
 
 
         /** Possible DataLinks primary **/
@@ -267,13 +267,23 @@ class WC_DataFetcher {
         }
         return 0;
     }
-    public function get_shop_order_example_id($example_id) {
-        global $wpdb;
+    public function get_shop_order_example_id($datalink_node, $example_id) {
 
-        $sql = "SELECT ID FROM " . $wpdb->prefix . "posts WHERE post_type = %s ORDER BY RAND() LIMIT 1";
-        $example_id =  $wpdb->get_var($wpdb->prepare($sql, array("shop_order")));
+        $args = array('return' => 'ids');
+        $link_spec = $datalink_node->link_spec;
 
-        return $example_id;
+        foreach($link_spec as $name => $value) {
+            $name = $name == 'post_status' ? str_replace("post_", "", $name) : $name;
+            $args[$name]  = $value;
+        }
+
+        $ids = wc_get_orders($args);
+
+        if(count($ids) > 0) {
+            $random_index = array_rand($ids);
+            return $ids[$random_index];
+        }
+        return 0;
     }
     public function get_review_example_id($example_id) {
         global $wpdb;

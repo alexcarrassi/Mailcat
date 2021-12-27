@@ -2304,7 +2304,14 @@ var Ark_Mail_CPT_JS = function() {
 
 
     self.render_secondary_selection_form = function(selected_primary) {
+
+        let hierarchy_path = [];
+        document.querySelectorAll("#dialog_add_datalink_hierarchy_path div:not(:last-child)").forEach(function(node) {
+            hierarchy_path.push(node.innerText);
+        })
+
         let data = {
+            'hierarchy_path' : hierarchy_path,
             'action' : 'render_secondary_selection_form',
             'link_type' : selected_primary.value,
             'link_spec' : {}
